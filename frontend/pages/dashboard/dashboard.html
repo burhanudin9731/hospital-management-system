@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" /><meta name="viewport" content="width=device-width,initial-scale=1.0" />
+  <meta name="root" content="../../" />
+  <title>Dashboard – Hospital Management System</title>
+  <link rel="stylesheet" href="../../css/style.css" />
+  <link rel="stylesheet" href="../../css/dashboard.css" />
+</head>
+<body data-page="dashboard">
+<div class="layout">
+  <div id="sidebarContainer"></div>
+  <div class="main-content">
+    <div id="navbarContainer"></div>
+    <div class="page-body">
+
+      <!-- Stats -->
+      <div class="stats-grid" id="statsGrid">
+        <div class="stat-card"><div class="stat-icon blue">👥</div><div><div class="stat-value" id="statPatients">—</div><div class="stat-label">Total Patients</div></div></div>
+        <div class="stat-card"><div class="stat-icon green">👨‍⚕️</div><div><div class="stat-value" id="statDoctors">—</div><div class="stat-label">Total Doctors</div></div></div>
+        <div class="stat-card"><div class="stat-icon orange">📅</div><div><div class="stat-value" id="statToday">—</div><div class="stat-label">Today's Appointments</div></div></div>
+        <div class="stat-card"><div class="stat-icon purple">🩺</div><div><div class="stat-value" id="statRecords">—</div><div class="stat-label">Medical Records</div></div></div>
+        <div class="stat-card"><div class="stat-icon red">💳</div><div><div class="stat-value" id="statUnpaid">—</div><div class="stat-label">Unpaid Bills</div></div></div>
+      </div>
+
+      <div class="dash-grid">
+        <!-- Left: Today's appointments -->
+        <div>
+          <div class="card" style="margin-bottom:20px">
+            <div class="card-header">
+              <h2>📅 Today's Appointments</h2>
+              <a href="../appointments/book_appointment.html" class="btn btn-primary btn-sm">+ Book</a>
+            </div>
+            <div class="card-body">
+              <ul class="appt-list" id="todayAppts">
+                <li style="color:var(--gray-5);font-size:.85rem">Loading...</li>
+              </ul>
+            </div>
+          </div>
+
+          <div class="card">
+            <div class="card-header"><h2>⚡ Quick Actions</h2></div>
+            <div class="card-body">
+              <div class="quick-grid">
+                <a href="../patients/add_patients.html"        class="quick-card"><div class="icon">➕</div><span>Add Patient</span></a>
+                <a href="../appointments/book_appointment.html" class="quick-card"><div class="icon">📝</div><span>Book Appt</span></a>
+                <a href="../medical/medical_records.html"       class="quick-card"><div class="icon">🩺</div><span>New Record</span></a>
+                <a href="../billing/billing.html"               class="quick-card"><div class="icon">💳</div><span>Create Bill</span></a>
+                <a href="../doctors/add_doctors.html"           class="quick-card"><div class="icon">👨‍⚕️</div><span>Add Doctor</span></a>
+                <a href="../medical/prescription.html"          class="quick-card"><div class="icon">💊</div><span>Prescriptions</span></a>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Right: Recent activity -->
+        <div>
+          <div class="card">
+            <div class="card-header"><h2>🕐 Recent Activity</h2></div>
+            <div class="card-body">
+              <ul class="activity-list" id="activityList">
+                <li class="activity-item">
+                  <div class="activity-dot blue"></div>
+                  <div><div class="activity-text">Loading recent activity...</div></div>
+                </li>
+              </ul>
+            </div>
+          </div>
+
+          <div class="card" style="margin-top:20px">
+            <div class="card-header"><h2>💰 Revenue Summary</h2></div>
+            <div class="card-body">
+              <div style="display:flex;flex-direction:column;gap:12px">
+                <div style="display:flex;justify-content:space-between;align-items:center">
+                  <span style="color:var(--gray-5);font-size:.85rem">Total Billed</span>
+                  <span style="font-weight:700;color:var(--gray-8)" id="revTotal">—</span>
+                </div>
+                <div style="display:flex;justify-content:space-between;align-items:center">
+                  <span style="color:var(--gray-5);font-size:.85rem">Collected</span>
+                  <span style="font-weight:700;color:var(--green)" id="revPaid">—</span>
+                </div>
+                <div style="display:flex;justify-content:space-between;align-items:center">
+                  <span style="color:var(--gray-5);font-size:.85rem">Outstanding</span>
+                  <span style="font-weight:700;color:var(--red)" id="revUnpaid">—</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+<div id="toast"></div>
+<script src="../../js/main.js"></script>
+<script>
+const BASE = '../../../backend/';
+
+async function loadDashboard() {
+  const [patients, doctors, todayAppts, records, bills] = await Promise.all([
+    apiGet(BASE+'patients/read.php'),
+    apiGet(BASE+'doctors/read.php'),
+    apiGet(BASE+'appointments/read.php?today=1'),
+    apiGet(BASE+'medical_records/read.php'),
+    apiGet(BASE+'billing/read.php'),
+  ]);
+
+  document.getElementById('statPatients').textContent = patients.count ?? 0;
+  document.getElementById('statDoctors').textContent  = doctors.count  ?? 0;
+  document.getElementById('statToday').textContent    = todayAppts.count ?? 0;
+  document.getElementById('statRecords').textContent  = records.data?.length ?? 0;
+
+  const unpaidBills = bills.data?.filter(b => b.payment_status === 'Unpaid') || [];
+  document.getElementById('statUnpaid').textContent = unpaidBills.length;
+
+  // Revenue
+  const total  = bills.data?.reduce((s,b) => s + parseFloat(b.total_amount||0), 0) || 0;
+  const paid   = bills.data?.filter(b=>b.payment_status==='Paid').reduce((s,b)=>s+parseFloat(b.total_amount||0),0)||0;
+  document.getElementById('revTotal').textContent  = '₺' + total.toFixed(2);
+  document.getElementById('revPaid').textContent   = '₺' + paid.toFixed(2);
+  document.getElementById('revUnpaid').textContent = '₺' + (total-paid).toFixed(2);
+
+  // Today's appointments list
+  const apptList = document.getElementById('todayAppts');
+  if (!todayAppts.data?.length) {
+    apptList.innerHTML = '<li style="color:var(--gray-5);font-size:.85rem;padding:12px 0">No appointments today.</li>';
+  } else {
+    apptList.innerHTML = todayAppts.data.map(a => `
+      <li class="appt-item">
+        <span class="appt-time">${a.appt_time?.slice(0,5)}</span>
+        <div class="appt-info">
+          <div class="appt-patient">${a.patient_name}</div>
+          <div class="appt-doctor">Dr. ${a.doctor_name} · ${a.specialization}</div>
+        </div>
+        ${statusBadge(a.status)}
+      </li>`).join('');
+  }
+
+  // Recent activity from last 5 appointments
+  const activity = document.getElementById('activityList');
+  const recent   = [...(patients.data||[])].slice(0,3).map(p=>({
+    dot:'blue', text:`New patient registered: ${p.first_name} ${p.last_name}`, time: fmtDate(p.registered_at)
+  }));
+  const recentAppts = (todayAppts.data||[]).slice(0,2).map(a=>({
+    dot:'green', text:`Appointment: ${a.patient_name} with Dr. ${a.doctor_name}`, time: a.appt_time?.slice(0,5)
+  }));
+  const all = [...recent, ...recentAppts];
+  activity.innerHTML = all.length
+    ? all.map(a=>`<li class="activity-item"><div class="activity-dot ${a.dot}"></div><div><div class="activity-text">${a.text}</div><div class="activity-time">${a.time}</div></div></li>`).join('')
+    : '<li class="activity-item"><div class="activity-text" style="color:var(--gray-5)">No recent activity.</div></li>';
+}
+
+document.addEventListener('DOMContentLoaded', loadDashboard);
+</script>
+</body>
+</html>

@@ -1,0 +1,396 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Login – Hospital Management System</title>
+
+  <!-- Google Fonts -->
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+
+  <style>
+    /* ── Reset & Base ───────────────────────────────────────── */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --blue-dark : #1a3c6e;
+      --blue-mid  : #2563eb;
+      --blue-light: #eff6ff;
+      --red       : #dc2626;
+      --green     : #16a34a;
+      --gray-1    : #f9fafb;
+      --gray-2    : #f3f4f6;
+      --gray-3    : #e5e7eb;
+      --gray-5    : #6b7280;
+      --gray-8    : #1f2937;
+      --white     : #ffffff;
+      --shadow    : 0 10px 40px rgba(0,0,0,.12);
+      --radius    : 12px;
+    }
+
+    body {
+      min-height: 100vh;
+      display: flex;
+      font-family: 'Inter', sans-serif;
+      background: linear-gradient(135deg, #1a3c6e 0%, #2563eb 50%, #1e40af 100%);
+    }
+
+    /* ── Left panel ─────────────────────────────────────────── */
+    .panel-left {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      padding: 3rem;
+      color: var(--white);
+      text-align: center;
+    }
+    .panel-left .logo { font-size: 4rem; margin-bottom: 1rem; }
+    .panel-left h1 { font-size: 2rem; font-weight: 700; margin-bottom: .75rem; }
+    .panel-left p  { font-size: 1rem; opacity: .85; max-width: 340px; line-height: 1.6; }
+
+    .feature-list {
+      list-style: none;
+      margin-top: 2rem;
+      display: flex;
+      flex-direction: column;
+      gap: .75rem;
+      text-align: left;
+      width: 100%;
+      max-width: 320px;
+    }
+    .feature-list li {
+      display: flex;
+      align-items: center;
+      gap: .75rem;
+      font-size: .95rem;
+      opacity: .9;
+    }
+    .feature-list li span.icon {
+      width: 36px; height: 36px;
+      background: rgba(255,255,255,.2);
+      border-radius: 8px;
+      display: grid; place-items: center;
+      font-size: 1.1rem;
+      flex-shrink: 0;
+    }
+
+    /* ── Right panel (card) ─────────────────────────────────── */
+    .panel-right {
+      width: 460px;
+      background: var(--white);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 2.5rem;
+    }
+
+    .login-card { width: 100%; }
+
+    .login-card h2 {
+      font-size: 1.7rem;
+      font-weight: 700;
+      color: var(--gray-8);
+      margin-bottom: .4rem;
+    }
+    .login-card .subtitle {
+      font-size: .95rem;
+      color: var(--gray-5);
+      margin-bottom: 2rem;
+    }
+
+    /* ── Form elements ──────────────────────────────────────── */
+    .form-group { margin-bottom: 1.25rem; }
+
+    label {
+      display: block;
+      font-size: .875rem;
+      font-weight: 500;
+      color: var(--gray-8);
+      margin-bottom: .45rem;
+    }
+
+    .input-wrap { position: relative; }
+    .input-wrap .input-icon {
+      position: absolute;
+      left: 14px; top: 50%; transform: translateY(-50%);
+      font-size: 1.05rem; color: var(--gray-5);
+      pointer-events: none;
+    }
+
+    input[type="email"],
+    input[type="password"],
+    input[type="text"] {
+      width: 100%;
+      padding: .75rem .75rem .75rem 2.6rem;
+      border: 1.5px solid var(--gray-3);
+      border-radius: 8px;
+      font-size: .95rem;
+      font-family: inherit;
+      color: var(--gray-8);
+      background: var(--gray-1);
+      transition: border-color .2s, box-shadow .2s;
+      outline: none;
+    }
+    input:focus {
+      border-color: var(--blue-mid);
+      box-shadow: 0 0 0 3px rgba(37,99,235,.12);
+      background: var(--white);
+    }
+    input.error { border-color: var(--red); }
+    input.valid { border-color: var(--green); }
+
+    /* toggle password visibility */
+    .toggle-pw {
+      position: absolute;
+      right: 12px; top: 50%; transform: translateY(-50%);
+      cursor: pointer; font-size: 1.05rem; color: var(--gray-5);
+      background: none; border: none; padding: 0;
+    }
+    .toggle-pw:hover { color: var(--blue-mid); }
+
+    /* field error message */
+    .field-error {
+      display: none;
+      font-size: .78rem;
+      color: var(--red);
+      margin-top: .3rem;
+    }
+    .field-error.visible { display: block; }
+
+    /* ── Alert box ──────────────────────────────────────────── */
+    .alert {
+      display: none;
+      padding: .85rem 1rem;
+      border-radius: 8px;
+      font-size: .88rem;
+      margin-bottom: 1.25rem;
+      font-weight: 500;
+    }
+    .alert.error   { background: #fef2f2; color: var(--red);   border: 1px solid #fca5a5; }
+    .alert.success { background: #f0fdf4; color: var(--green);  border: 1px solid #86efac; }
+    .alert.visible { display: flex; align-items: center; gap: .6rem; }
+
+    /* ── Remember + Forgot ──────────────────────────────────── */
+    .row-options {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 1.5rem;
+      font-size: .875rem;
+    }
+    .row-options label { margin: 0; display: flex; align-items: center; gap: .4rem; cursor: pointer; color: var(--gray-5); }
+    .row-options a { color: var(--blue-mid); text-decoration: none; font-weight: 500; }
+    .row-options a:hover { text-decoration: underline; }
+
+    /* ── Submit button ──────────────────────────────────────── */
+    .btn-submit {
+      width: 100%;
+      padding: .85rem;
+      background: var(--blue-mid);
+      color: var(--white);
+      border: none;
+      border-radius: 8px;
+      font-size: 1rem;
+      font-weight: 600;
+      font-family: inherit;
+      cursor: pointer;
+      transition: background .2s, transform .1s;
+      display: flex; align-items: center; justify-content: center; gap: .5rem;
+    }
+    .btn-submit:hover  { background: var(--blue-dark); }
+    .btn-submit:active { transform: scale(.98); }
+    .btn-submit:disabled { opacity: .65; cursor: not-allowed; }
+
+    /* spinner */
+    .spinner {
+      display: none;
+      width: 18px; height: 18px;
+      border: 2.5px solid rgba(255,255,255,.4);
+      border-top-color: var(--white);
+      border-radius: 50%;
+      animation: spin .7s linear infinite;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* ── Footer link ────────────────────────────────────────── */
+    .card-footer {
+      text-align: center;
+      margin-top: 1.5rem;
+      font-size: .875rem;
+      color: var(--gray-5);
+    }
+    .card-footer a { color: var(--blue-mid); font-weight: 600; text-decoration: none; }
+    .card-footer a:hover { text-decoration: underline; }
+
+    /* ── Responsive ─────────────────────────────────────────── */
+    @media (max-width: 768px) {
+      body { flex-direction: column; }
+      .panel-left  { padding: 2rem 1.5rem; }
+      .panel-left .feature-list { display: none; }
+      .panel-right { width: 100%; padding: 2rem 1.5rem; }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- ══ Left branding panel ══════════════════════════════════ -->
+  <div class="panel-left">
+    <div class="logo">🏥</div>
+    <h1>MediCare HMS</h1>
+    <p>A complete hospital management platform for patients, doctors, and staff.</p>
+
+    <ul class="feature-list">
+      <li><span class="icon">📅</span> Smart appointment scheduling</li>
+      <li><span class="icon">🩺</span> Digital medical records</li>
+      <li><span class="icon">💊</span> Prescription management</li>
+      <li><span class="icon">💳</span> Integrated billing system</li>
+      <li><span class="icon">📊</span> Reports & analytics</li>
+    </ul>
+  </div>
+
+  <!-- ══ Right login card ══════════════════════════════════════ -->
+  <div class="panel-right">
+    <div class="login-card">
+
+      <h2>Welcome Back 👋</h2>
+      <p class="subtitle">Sign in to your hospital account</p>
+
+      <!-- Alert area -->
+      <div class="alert" id="alertBox" role="alert"></div>
+
+      <form id="loginForm" novalidate>
+
+        <!-- Email -->
+        <div class="form-group">
+          <label for="email">Email Address</label>
+          <div class="input-wrap">
+            <span class="input-icon">📧</span>
+            <input type="email" id="email" name="email"
+                   placeholder="doctor@hospital.com"
+                   autocomplete="email" required />
+          </div>
+          <span class="field-error" id="emailError"></span>
+        </div>
+
+        <!-- Password -->
+        <div class="form-group">
+          <label for="password">Password</label>
+          <div class="input-wrap">
+            <span class="input-icon">🔒</span>
+            <input type="password" id="password" name="password"
+                   placeholder="Enter your password"
+                   autocomplete="current-password" required />
+            <button type="button" class="toggle-pw" id="togglePw" aria-label="Show password">👁️</button>
+          </div>
+          <span class="field-error" id="passwordError"></span>
+        </div>
+
+        <!-- Remember & Forgot -->
+        <div class="row-options">
+          <label>
+            <input type="checkbox" id="rememberMe" />
+            Remember me
+          </label>
+          <a href="#">Forgot password?</a>
+        </div>
+
+        <!-- Submit -->
+        <button type="submit" class="btn-submit" id="loginBtn">
+          <span class="spinner" id="spinner"></span>
+          <span id="btnText">Sign In</span>
+        </button>
+
+      </form>
+
+      <p class="card-footer">
+        Don't have an account? <a href="register.html">Create account</a>
+      </p>
+
+    </div>
+  </div>
+
+  <!-- ══ Validation & AJAX ═════════════════════════════════════ -->
+  <script src="../../js/validation.js"></script>
+  <script>
+    const form       = document.getElementById('loginForm');
+    const emailEl    = document.getElementById('email');
+    const passwordEl = document.getElementById('password');
+    const alertBox   = document.getElementById('alertBox');
+    const loginBtn   = document.getElementById('loginBtn');
+    const spinner    = document.getElementById('spinner');
+    const btnText    = document.getElementById('btnText');
+    const togglePw   = document.getElementById('togglePw');
+
+    // ── Toggle password visibility ───────────────────────────
+    togglePw.addEventListener('click', () => {
+      const isHidden = passwordEl.type === 'password';
+      passwordEl.type = isHidden ? 'text' : 'password';
+      togglePw.textContent = isHidden ? '🙈' : '👁️';
+    });
+
+    // ── Real-time inline validation ──────────────────────────
+    emailEl.addEventListener('blur', () =>
+      validateEmail(emailEl, 'emailError'));
+
+    passwordEl.addEventListener('blur', () =>
+      validateMinLength(passwordEl, 'passwordError', 6, 'Password'));
+
+    emailEl.addEventListener('input', () =>
+      clearFieldError(emailEl, 'emailError'));
+
+    passwordEl.addEventListener('input', () =>
+      clearFieldError(passwordEl, 'passwordError'));
+
+    // ── Form submit with AJAX ────────────────────────────────
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      hideAlert();
+
+      // JS Validation before sending to server
+      const emailOk = validateEmail(emailEl, 'emailError');
+      const passOk  = validateMinLength(passwordEl, 'passwordError', 6, 'Password');
+      if (!emailOk || !passOk) return;
+
+      // Loading state
+      setLoading(true);
+
+      try {
+        const formData = new FormData(form);
+        const res = await fetch('../../../backend/auth/login.php', {
+          method: 'POST',
+          body: formData
+        });
+
+        const data = await res.json();
+
+        if (data.success) {
+          showAlert(data.message, 'success');
+          setTimeout(() => window.location.href = data.redirect, 1200);
+        } else {
+          showAlert(data.message, 'error');
+          setLoading(false);
+        }
+      } catch (err) {
+        showAlert('Network error. Please check your connection.', 'error');
+        setLoading(false);
+      }
+    });
+
+    function setLoading(state) {
+      loginBtn.disabled     = state;
+      spinner.style.display = state ? 'block' : 'none';
+      btnText.textContent   = state ? 'Signing in...' : 'Sign In';
+    }
+
+    function showAlert(msg, type) {
+      alertBox.textContent = (type === 'error' ? '⚠️ ' : '✅ ') + msg;
+      alertBox.className   = `alert ${type} visible`;
+    }
+    function hideAlert() {
+      alertBox.className = 'alert';
+    }
+  </script>
+</body>
+</html>

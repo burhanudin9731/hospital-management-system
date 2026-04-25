@@ -1,0 +1,122 @@
+<!-- ============================================================
+     Shared Sidebar Component
+     Usage: include via JS fetch() in each page
+     ============================================================ -->
+<aside class="sidebar" id="sidebar">
+  <div class="sidebar-brand">
+    <span class="brand-icon">🏥</span>
+    <div>
+      <div class="brand-name">MediCare</div>
+      <div class="brand-sub">HMS v1.0</div>
+    </div>
+  </div>
+
+  <nav class="sidebar-nav">
+    <div class="nav-section-label">Main</div>
+
+    <a href="../dashboard/dashboard.html" class="nav-item" data-page="dashboard">
+      <span class="nav-icon">📊</span><span>Dashboard</span>
+    </a>
+
+    <div class="nav-section-label">Patients</div>
+    <a href="../patients/list_patients.html" class="nav-item" data-page="patients">
+      <span class="nav-icon">👥</span><span>Patient List</span>
+    </a>
+    <a href="../patients/add_patients.html" class="nav-item" data-page="add-patient">
+      <span class="nav-icon">➕</span><span>Add Patient</span>
+    </a>
+
+    <div class="nav-section-label">Appointments</div>
+    <a href="../appointments/list_appointment.html" class="nav-item" data-page="appointments">
+      <span class="nav-icon">📅</span><span>Appointments</span>
+    </a>
+    <a href="../appointments/book_appointment.html" class="nav-item" data-page="book">
+      <span class="nav-icon">📝</span><span>Book Appointment</span>
+    </a>
+
+    <div class="nav-section-label">Medical</div>
+    <a href="../medical/medical_records.html" class="nav-item" data-page="records">
+      <span class="nav-icon">🩺</span><span>Medical Records</span>
+    </a>
+    <a href="../medical/prescription.html" class="nav-item" data-page="prescriptions">
+      <span class="nav-icon">💊</span><span>Prescriptions</span>
+    </a>
+
+    <div class="nav-section-label">Management</div>
+    <a href="../doctors/list_doctors.html" class="nav-item" data-page="doctors">
+      <span class="nav-icon">👨‍⚕️</span><span>Doctors</span>
+    </a>
+    <a href="../billing/billing.html" class="nav-item" data-page="billing">
+      <span class="nav-icon">💳</span><span>Billing</span>
+    </a>
+  </nav>
+
+  <div class="sidebar-footer">
+    <div class="sidebar-user" id="sidebarUser">
+      <div class="avatar" id="sidebarAvatar">A</div>
+      <div>
+        <div class="sidebar-username" id="sidebarUsername">Admin</div>
+        <div class="sidebar-role" id="sidebarRole">Administrator</div>
+      </div>
+    </div>
+    <a href="../auth/login.html" class="nav-item logout-btn" id="logoutBtn">
+      <span class="nav-icon">🚪</span><span>Logout</span>
+    </a>
+  </div>
+</aside>
+
+<style>
+.sidebar {
+  width: 260px; height: 100vh;
+  background: var(--blue-dark);
+  position: fixed; top: 0; left: 0;
+  display: flex; flex-direction: column;
+  z-index: 100; overflow-y: auto;
+  transition: transform .3s ease;
+}
+.sidebar-brand {
+  display: flex; align-items: center; gap: 12px;
+  padding: 20px 18px;
+  border-bottom: 1px solid rgba(255,255,255,.1);
+}
+.brand-icon { font-size: 1.8rem; }
+.brand-name { color: #fff; font-weight: 700; font-size: 1rem; }
+.brand-sub  { color: rgba(255,255,255,.5); font-size: .7rem; }
+.sidebar-nav { flex: 1; padding: 12px 10px; }
+.nav-section-label {
+  color: rgba(255,255,255,.4);
+  font-size: .65rem; font-weight: 700;
+  text-transform: uppercase; letter-spacing: .08em;
+  padding: 12px 8px 4px;
+}
+.nav-item {
+  display: flex; align-items: center; gap: 10px;
+  padding: 9px 12px; border-radius: 8px;
+  color: rgba(255,255,255,.75);
+  text-decoration: none; font-size: .875rem;
+  transition: all .2s; margin-bottom: 2px;
+  cursor: pointer;
+}
+.nav-item:hover, .nav-item.active {
+  background: rgba(255,255,255,.12);
+  color: #fff;
+}
+.nav-icon { font-size: 1rem; width: 20px; text-align: center; }
+.sidebar-footer {
+  padding: 12px 10px;
+  border-top: 1px solid rgba(255,255,255,.1);
+}
+.sidebar-user {
+  display: flex; align-items: center; gap: 10px;
+  padding: 10px 12px 14px;
+}
+.sidebar-username { color: #fff; font-size: .85rem; font-weight: 600; }
+.sidebar-role     { color: rgba(255,255,255,.5); font-size: .72rem; }
+.logout-btn { color: rgba(255,100,100,.85) !important; }
+.logout-btn:hover { background: rgba(220,38,38,.2) !important; color: #fca5a5 !important; }
+
+@media (max-width: 768px) {
+  .sidebar { transform: translateX(-100%); }
+  .sidebar.open { transform: translateX(0); }
+}
+</style>

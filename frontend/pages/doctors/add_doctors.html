@@ -1,143 +1,180 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Add New Doctor</title>
-    <style>
-        :root {
-            --primary-color: #2a9d8f;
-            --secondary-color: #264653;
-            --bg-color: #f4f4f9;
-        }
-
-        body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background-color: var(--bg-color);
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            padding: 40px;
-        }
-
-        .container {
-            background: white;
-            padding: 30px;
-            border-radius: 12px;
-            box-shadow: 0 10px 25px rgba(0,0,0,0.1);
-            width: 100%;
-            max-width: 600px;
-        }
-
-        h2 {
-            color: var(--secondary-color);
-            margin-bottom: 20px;
-            border-bottom: 2px solid var(--primary-color);
-            padding-bottom: 10px;
-        }
-
-        .form-group {
-            margin-bottom: 15px;
-        }
-
-        label {
-            display: block;
-            margin-bottom: 5px;
-            font-weight: 600;
-            color: #444;
-        }
-
-        input, select, textarea {
-            width: 100%;
-            padding: 10px;
-            border: 1px solid #ddd;
-            border-radius: 6px;
-            box-sizing: border-box; /* Ensures padding doesn't affect width */
-        }
-
-        input:focus {
-            outline: none;
-            border-color: var(--primary-color);
-            box-shadow: 0 0 5px rgba(42, 157, 143, 0.3);
-        }
-
-        .btn-submit {
-            background-color: var(--primary-color);
-            color: white;
-            padding: 12px 20px;
-            border: none;
-            border-radius: 6px;
-            cursor: pointer;
-            width: 100%;
-            font-size: 16px;
-            font-weight: bold;
-            transition: background 0.3s;
-        }
-
-        .btn-submit:hover {
-            background-color: #21867a;
-        }
-
-        .row {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 15px;
-        }
-    </style>
+  <meta charset="UTF-8"/><meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+  <meta name="root" content="../../"/>
+  <title>Add Doctor – Hospital Management System</title>
+  <link rel="stylesheet" href="../../css/style.css"/>
 </head>
-<body>
+<body data-page="doctors">
+<div class="layout">
+  <div id="sidebarContainer"></div>
+  <div class="main-content">
+    <div id="navbarContainer"></div>
+    <div class="page-body">
 
-<div class="container">
-    <h2>Add New Doctor</h2>
-    <form action="/submit-doctor-endpoint" method="POST">
-        
-        <div class="form-group">
-            <label for="full_name">Full Name</label>
-            <input type="text" id="full_name" name="full_name" placeholder="Dr. John Doe" required>
+      <div class="page-header">
+        <div><h1>👨‍⚕️ Add Doctor</h1><p>Register a new doctor to the system</p></div>
+        <a href="list_doctors.html" class="btn btn-ghost">← All Doctors</a>
+      </div>
+
+      <div style="display:grid;grid-template-columns:1fr 300px;gap:20px">
+        <div class="card">
+          <div class="card-header"><h2>Doctor Information</h2></div>
+          <div class="card-body">
+            <div class="alert" id="alertBox"></div>
+            <form id="doctorForm" novalidate>
+              <div class="form-grid">
+
+                <div class="form-group">
+                  <label>First Name *</label>
+                  <div class="input-wrap"><span class="input-icon">👤</span>
+                    <input type="text" class="form-control" id="first_name" name="first_name" placeholder="First name"/>
+                  </div>
+                  <span class="field-error" id="firstNameError"></span>
+                </div>
+
+                <div class="form-group">
+                  <label>Last Name *</label>
+                  <div class="input-wrap"><span class="input-icon">👤</span>
+                    <input type="text" class="form-control" id="last_name" name="last_name" placeholder="Last name"/>
+                  </div>
+                  <span class="field-error" id="lastNameError"></span>
+                </div>
+
+                <div class="form-group">
+                  <label>Specialization *</label>
+                  <div class="input-wrap"><span class="input-icon">🩺</span>
+                    <select class="form-control" id="specialization" name="specialization">
+                      <option value="">Select specialization...</option>
+                      <option>Cardiologist</option><option>Neurologist</option>
+                      <option>Pediatrician</option><option>Orthopedic Surgeon</option>
+                      <option>Emergency Physician</option><option>Radiologist</option>
+                      <option>General Practitioner</option><option>Dermatologist</option>
+                      <option>Psychiatrist</option><option>Oncologist</option>
+                    </select>
+                  </div>
+                  <span class="field-error" id="specError"></span>
+                </div>
+
+                <div class="form-group">
+                  <label>Department *</label>
+                  <div class="input-wrap"><span class="input-icon">🏥</span>
+                    <select class="form-control" id="department_id" name="department_id">
+                      <option value="">Loading departments...</option>
+                    </select>
+                  </div>
+                  <span class="field-error" id="deptError"></span>
+                </div>
+
+                <div class="form-group">
+                  <label>Phone *</label>
+                  <div class="input-wrap"><span class="input-icon">📱</span>
+                    <input type="text" class="form-control" id="phone" name="phone" placeholder="05XXXXXXXXX"/>
+                  </div>
+                  <span class="field-error" id="phoneError"></span>
+                </div>
+
+                <div class="form-group">
+                  <label>Email *</label>
+                  <div class="input-wrap"><span class="input-icon">📧</span>
+                    <input type="email" class="form-control" id="email" name="email" placeholder="doctor@hospital.com"/>
+                  </div>
+                  <span class="field-error" id="emailError"></span>
+                </div>
+
+              </div>
+              <div style="margin-top:20px;display:flex;gap:10px">
+                <button type="submit" class="btn btn-primary" id="submitBtn">
+                  <span class="spinner" id="spinner"></span>
+                  <span id="btnText">👨‍⚕️ Add Doctor</span>
+                </button>
+                <button type="reset" class="btn btn-ghost">Clear</button>
+              </div>
+            </form>
+          </div>
         </div>
 
-        <div class="row">
-            <div class="form-group">
-                <label for="specialization">Specialization</label>
-                <select id="specialization" name="specialization" required>
-                    <option value="">Select Specialization</option>
-                    <option value="cardiology">Cardiology</option>
-                    <option value="pediatrics">Pediatrics</option>
-                    <option value="neurology">Neurology</option>
-                    <option value="dermatology">Dermatology</option>
-                    <option value="general">General Medicine</option>
-                </select>
+        <!-- Info panel -->
+        <div style="display:flex;flex-direction:column;gap:16px">
+          <div class="card">
+            <div class="card-header"><h2>📋 Requirements</h2></div>
+            <div class="card-body" style="font-size:.82rem;color:var(--gray-5);line-height:2">
+              <p>• All starred (*) fields are required</p>
+              <p>• Email must be unique in the system</p>
+              <p>• Doctor must be assigned to a department</p>
+              <p>• Phone: 10–15 digits</p>
             </div>
-            <div class="form-group">
-                <label for="license_no">Medical License No.</label>
-                <input type="text" id="license_no" name="license_no" placeholder="MLN-12345" required>
+          </div>
+          <div class="card">
+            <div class="card-header"><h2>🏥 Departments</h2></div>
+            <div class="card-body" id="deptList" style="font-size:.82rem;color:var(--gray-5);line-height:2">
+              Loading...
             </div>
+          </div>
         </div>
+      </div>
 
-        <div class="row">
-            <div class="form-group">
-                <label for="email">Email Address</label>
-                <input type="email" id="email" name="email" placeholder="doctor@hospital.com" required>
-            </div>
-            <div class="form-group">
-                <label for="phone">Phone Number</label>
-                <input type="tel" id="phone" name="phone" placeholder="+1 234 567 890" required>
-            </div>
-        </div>
-
-        <div class="form-group">
-            <label for="experience">Years of Experience</label>
-            <input type="number" id="experience" name="experience" min="0" max="60">
-        </div>
-
-        <div class="form-group">
-            <label for="bio">Short Biography</label>
-            <textarea id="bio" name="bio" rows="4" placeholder="Brief background of the doctor..."></textarea>
-        </div>
-
-        <button type="submit" class="btn-submit">Register Doctor</button>
-    </form>
+    </div>
+  </div>
 </div>
+<div id="toast"></div>
+<script src="../../js/validation.js"></script>
+<script src="../../js/main.js"></script>
+<script>
+const BASE = '../../../backend/';
 
+async function loadDepartments() {
+  const res = await fetch(BASE + 'departments/read.php');
+  // Fallback: hardcoded departments if endpoint not ready
+  const depts = [
+    {department_id:1,dept_name:'Cardiology'},
+    {department_id:2,dept_name:'Neurology'},
+    {department_id:3,dept_name:'Pediatrics'},
+    {department_id:4,dept_name:'Orthopedics'},
+    {department_id:5,dept_name:'Emergency'},
+    {department_id:6,dept_name:'Radiology'},
+  ];
+  const sel = document.getElementById('department_id');
+  sel.innerHTML = '<option value="">Select department...</option>';
+  depts.forEach(d => sel.innerHTML += `<option value="${d.department_id}">${d.dept_name}</option>`);
+  document.getElementById('deptList').innerHTML = depts.map(d=>`<p>• ${d.dept_name}</p>`).join('');
+}
+
+document.getElementById('doctorForm').addEventListener('submit', async e => {
+  e.preventDefault();
+  const alert = document.getElementById('alertBox');
+  alert.className = 'alert';
+
+  const fnOk   = validateRequired(document.getElementById('first_name'), 'firstNameError', 'First name');
+  const lnOk   = validateRequired(document.getElementById('last_name'),  'lastNameError',  'Last name');
+  const spOk   = validateSelect(document.getElementById('specialization'),'specError','specialization');
+  const dpOk   = validateSelect(document.getElementById('department_id'), 'deptError', 'department');
+  const phOk   = validatePhone(document.getElementById('phone'),          'phoneError');
+  const emOk   = validateEmail(document.getElementById('email'),          'emailError');
+  if (!fnOk||!lnOk||!spOk||!dpOk||!phOk||!emOk) return;
+
+  const btn = document.getElementById('submitBtn');
+  btn.disabled=true;
+  document.getElementById('spinner').style.display='block';
+  document.getElementById('btnText').textContent='Adding...';
+
+  try {
+    const data = await apiPost(BASE+'doctors/create.php', new FormData(e.target));
+    if (data.success) {
+      showToast(data.message,'success');
+      e.target.reset();
+    } else {
+      alert.textContent='⚠️ '+data.message;
+      alert.className='alert error visible';
+    }
+  } catch { alert.textContent='⚠️ Network error.'; alert.className='alert error visible'; }
+  btn.disabled=false;
+  document.getElementById('spinner').style.display='none';
+  document.getElementById('btnText').textContent='👨‍⚕️ Add Doctor';
+});
+
+document.addEventListener('DOMContentLoaded', loadDepartments);
+</script>
 </body>
 </html>

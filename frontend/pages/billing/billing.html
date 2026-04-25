@@ -1,0 +1,328 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/><meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+  <meta name="root" content="../../"/>
+  <title>Billing – Hospital Management System</title>
+  <link rel="stylesheet" href="../../css/style.css"/>
+</head>
+<body data-page="billing">
+<div class="layout">
+  <div id="sidebarContainer"></div>
+  <div class="main-content">
+    <div id="navbarContainer"></div>
+    <div class="page-body">
+
+      <div class="page-header">
+        <div><h1>💳 Billing</h1><p>Patient bills and payment management</p></div>
+        <button class="btn btn-primary" onclick="openCreateModal()">+ Create Bill</button>
+      </div>
+
+      <!-- Summary stats -->
+      <div class="stats-grid" style="margin-bottom:20px;grid-template-columns:repeat(4,1fr)">
+        <div class="stat-card"><div class="stat-icon blue">📋</div><div><div class="stat-value" id="cntTotal">0</div><div class="stat-label">Total Bills</div></div></div>
+        <div class="stat-card"><div class="stat-icon red">⏳</div><div><div class="stat-value" id="cntUnpaid">0</div><div class="stat-label">Unpaid</div></div></div>
+        <div class="stat-card"><div class="stat-icon green">✅</div><div><div class="stat-value" id="cntPaid">0</div><div class="stat-label">Paid</div></div></div>
+        <div class="stat-card"><div class="stat-icon orange">💰</div><div><div class="stat-value" id="totalRev">₺0</div><div class="stat-label">Total Revenue</div></div></div>
+      </div>
+
+      <!-- Filter -->
+      <div class="card" style="margin-bottom:20px">
+        <div class="card-body" style="padding:14px 20px">
+          <div class="search-bar">
+            <div class="search-wrap">
+              <span class="search-icon">🔍</span>
+              <input type="text" id="searchInput" placeholder="Search patient name..." oninput="filterTable()"/>
+            </div>
+            <select id="statusFilter" class="form-control" style="width:160px;padding:8px 10px" onchange="loadBills()">
+              <option value="">All Statuses</option>
+              <option value="Unpaid">Unpaid</option>
+              <option value="Partial">Partial</option>
+              <option value="Paid">Paid</option>
+            </select>
+          </div>
+        </div>
+      </div>
+
+      <!-- Bills Table -->
+      <div class="card">
+        <div class="card-header">
+          <h2>Bills List</h2>
+          <span id="tableCount" style="font-size:.8rem;color:var(--gray-5)"></span>
+        </div>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr><th>#</th><th>Patient</th><th>Consult Fee</th><th>Medicine</th><th>Room</th><th>Other</th><th>Total</th><th>Status</th><th>Date</th><th>Actions</th></tr>
+            </thead>
+            <tbody id="billBody">
+              <tr><td colspan="10" style="text-align:center;padding:32px;color:var(--gray-5)">Loading...</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<!-- Create Bill Modal -->
+<div class="modal-overlay" id="createModal">
+  <div class="modal" style="max-width:620px">
+    <div class="modal-header">
+      <h3>💳 Create Bill</h3>
+      <button class="modal-close" onclick="closeCreate()">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="alert" id="billAlert"></div>
+      <form id="billForm">
+        <div class="form-grid">
+
+          <div class="form-group full">
+            <label>Patient *</label>
+            <div class="input-wrap"><span class="input-icon">👤</span>
+              <select class="form-control" id="bill_patient" name="patient_id">
+                <option value="">Select patient...</option>
+              </select>
+            </div>
+            <span class="field-error" id="billPatError"></span>
+          </div>
+
+          <div class="form-group full">
+            <label>Linked Appointment</label>
+            <div class="input-wrap"><span class="input-icon">📅</span>
+              <select class="form-control" id="bill_appt" name="appointment_id">
+                <option value="">None</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label>Consultation Fee (₺)</label>
+            <div class="input-wrap"><span class="input-icon">🩺</span>
+              <input type="number" class="form-control" id="bill_consult" name="consultation_fee" min="0" step="0.01" value="0" oninput="calcTotal()"/>
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label>Medicine Cost (₺)</label>
+            <div class="input-wrap"><span class="input-icon">💊</span>
+              <input type="number" class="form-control" id="bill_med" name="medicine_cost" min="0" step="0.01" value="0" oninput="calcTotal()"/>
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label>Room Charge (₺)</label>
+            <div class="input-wrap"><span class="input-icon">🏥</span>
+              <input type="number" class="form-control" id="bill_room" name="room_charge" min="0" step="0.01" value="0" oninput="calcTotal()"/>
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label>Other Charges (₺)</label>
+            <div class="input-wrap"><span class="input-icon">➕</span>
+              <input type="number" class="form-control" id="bill_other" name="other_charges" min="0" step="0.01" value="0" oninput="calcTotal()"/>
+            </div>
+          </div>
+
+          <!-- Live total -->
+          <div class="form-group full">
+            <div style="padding:14px 18px;background:var(--blue-light);border-radius:10px;display:flex;justify-content:space-between;align-items:center">
+              <span style="font-weight:600;color:var(--blue-dark);font-size:.95rem">💰 Total Amount</span>
+              <span style="font-size:1.4rem;font-weight:700;color:var(--blue-mid)" id="liveTotal">₺0.00</span>
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label>Payment Status</label>
+            <div class="input-wrap"><span class="input-icon">🔄</span>
+              <select class="form-control" name="payment_status" id="bill_status">
+                <option value="Unpaid">Unpaid</option>
+                <option value="Partial">Partially Paid</option>
+                <option value="Paid">Fully Paid</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label>Payment Method</label>
+            <div class="input-wrap"><span class="input-icon">💳</span>
+              <select class="form-control" name="payment_method">
+                <option value="">—</option>
+                <option value="Cash">Cash</option>
+                <option value="Card">Credit/Debit Card</option>
+                <option value="Insurance">Insurance</option>
+                <option value="Online">Online Transfer</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="form-group full">
+            <label>Bill Date</label>
+            <div class="input-wrap"><span class="input-icon">📅</span>
+              <input type="date" class="form-control" id="bill_date" name="bill_date"/>
+            </div>
+          </div>
+
+        </div>
+      </form>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeCreate()">Cancel</button>
+      <button class="btn btn-primary" id="billBtn" onclick="submitBill()">
+        <span class="spinner" id="billSpinner"></span>
+        <span id="billBtnText">Create Bill</span>
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- View Bill Modal -->
+<div class="modal-overlay" id="viewModal">
+  <div class="modal" style="max-width:480px">
+    <div class="modal-header">
+      <h3>🧾 Bill Receipt</h3>
+      <button class="modal-close" onclick="closeView()">✕</button>
+    </div>
+    <div class="modal-body" id="viewBody"></div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeView()">Close</button>
+      <button class="btn btn-primary" onclick="window.print()">🖨️ Print</button>
+    </div>
+  </div>
+</div>
+
+<div id="toast"></div>
+<script src="../../js/validation.js"></script>
+<script src="../../js/main.js"></script>
+<script>
+const BASE = '../../../backend/';
+let allBills = [];
+
+async function loadBills() {
+  const status = document.getElementById('statusFilter').value;
+  let url = BASE + 'billing/read.php';
+  if (status) url += `?status=${encodeURIComponent(status)}`;
+  const data = await apiGet(url);
+  if (!data.success) return;
+  allBills = data.data || [];
+  updateStats();
+  renderTable(allBills);
+}
+
+function updateStats() {
+  document.getElementById('cntTotal').textContent  = allBills.length;
+  document.getElementById('cntUnpaid').textContent = allBills.filter(b=>b.payment_status==='Unpaid').length;
+  document.getElementById('cntPaid').textContent   = allBills.filter(b=>b.payment_status==='Paid').length;
+  const rev = allBills.reduce((s,b)=>s+parseFloat(b.total_amount||0),0);
+  document.getElementById('totalRev').textContent  = '₺'+rev.toFixed(2);
+}
+
+function renderTable(rows) {
+  const tbody = document.getElementById('billBody');
+  document.getElementById('tableCount').textContent = `${rows.length} bill(s)`;
+  if (!rows.length) {
+    tbody.innerHTML='<tr><td colspan="10"><div class="empty-state"><div class="empty-icon">💳</div><p>No bills found.</p></div></td></tr>';
+    return;
+  }
+  tbody.innerHTML = rows.map(b => `
+    <tr>
+      <td style="color:var(--gray-5)">#${b.bill_id}</td>
+      <td><div style="font-weight:500">${b.patient_name}</div><div style="font-size:.75rem;color:var(--gray-5)">${b.phone}</div></td>
+      <td>₺${parseFloat(b.consultation_fee||0).toFixed(2)}</td>
+      <td>₺${parseFloat(b.medicine_cost||0).toFixed(2)}</td>
+      <td>₺${parseFloat(b.room_charge||0).toFixed(2)}</td>
+      <td>₺${parseFloat(b.other_charges||0).toFixed(2)}</td>
+      <td style="font-weight:700;color:var(--blue-mid)">₺${parseFloat(b.total_amount||0).toFixed(2)}</td>
+      <td>${statusBadge(b.payment_status)}</td>
+      <td>${fmtDate(b.bill_date)}</td>
+      <td>
+        <button class="btn btn-outline btn-sm" onclick='viewBill(${JSON.stringify(b).replace(/"/g,"&quot;")})'>🧾 View</button>
+      </td>
+    </tr>`).join('');
+}
+
+function filterTable() {
+  const q = document.getElementById('searchInput').value.toLowerCase();
+  renderTable(allBills.filter(b => b.patient_name?.toLowerCase().includes(q)));
+}
+
+function calcTotal() {
+  const consult = parseFloat(document.getElementById('bill_consult').value)||0;
+  const med     = parseFloat(document.getElementById('bill_med').value)||0;
+  const room    = parseFloat(document.getElementById('bill_room').value)||0;
+  const other   = parseFloat(document.getElementById('bill_other').value)||0;
+  document.getElementById('liveTotal').textContent = '₺'+(consult+med+room+other).toFixed(2);
+}
+
+async function openCreateModal() {
+  const [patients, appts] = await Promise.all([
+    apiGet(BASE+'patients/read.php'),
+    apiGet(BASE+'appointments/read.php?status=Completed')
+  ]);
+  const patSel = document.getElementById('bill_patient');
+  patSel.innerHTML = '<option value="">Select patient...</option>';
+  patients.data?.forEach(p => patSel.innerHTML += `<option value="${p.patient_id}">${p.first_name} ${p.last_name}</option>`);
+
+  const apptSel = document.getElementById('bill_appt');
+  apptSel.innerHTML = '<option value="">None</option>';
+  appts.data?.forEach(a => apptSel.innerHTML += `<option value="${a.appointment_id}">${a.patient_name} – ${fmtDate(a.appt_date)}</option>`);
+
+  document.getElementById('bill_date').value = new Date().toISOString().split('T')[0];
+  document.getElementById('liveTotal').textContent = '₺0.00';
+  document.getElementById('createModal').classList.add('open');
+}
+
+async function submitBill() {
+  const alert = document.getElementById('billAlert');
+  alert.className = 'alert';
+  const patOk = validateSelect(document.getElementById('bill_patient'),'billPatError','patient');
+  if (!patOk) return;
+
+  document.getElementById('billBtn').disabled=true;
+  document.getElementById('billSpinner').style.display='block';
+  document.getElementById('billBtnText').textContent='Creating...';
+
+  try {
+    const data = await apiPost(BASE+'billing/create.php', new FormData(document.getElementById('billForm')));
+    if (data.success) {
+      showToast(`Bill created – Total: ₺${parseFloat(data.total).toFixed(2)}`,'success');
+      closeCreate();
+      document.getElementById('billForm').reset();
+      loadBills();
+    } else {
+      alert.textContent='⚠️ '+data.message; alert.className='alert error visible';
+    }
+  } catch { alert.textContent='⚠️ Network error.'; alert.className='alert error visible'; }
+  document.getElementById('billBtn').disabled=false;
+  document.getElementById('billSpinner').style.display='none';
+  document.getElementById('billBtnText').textContent='Create Bill';
+}
+
+function viewBill(b) {
+  document.getElementById('viewBody').innerHTML = `
+    <div style="font-family:monospace;background:var(--gray-1);border-radius:8px;padding:20px;font-size:.85rem;line-height:2">
+      <div style="text-align:center;font-size:1.1rem;font-weight:700;margin-bottom:12px">🏥 MediCare HMS<br><small style="font-weight:400;font-size:.75rem">BILL RECEIPT #${b.bill_id}</small></div>
+      <hr style="border-color:var(--gray-3);margin-bottom:12px"/>
+      <div style="display:flex;justify-content:space-between"><span>Patient:</span><b>${b.patient_name}</b></div>
+      <div style="display:flex;justify-content:space-between"><span>Date:</span><span>${fmtDate(b.bill_date)}</span></div>
+      <hr style="border-color:var(--gray-3);margin:10px 0"/>
+      <div style="display:flex;justify-content:space-between"><span>Consultation:</span><span>₺${parseFloat(b.consultation_fee||0).toFixed(2)}</span></div>
+      <div style="display:flex;justify-content:space-between"><span>Medicine:</span><span>₺${parseFloat(b.medicine_cost||0).toFixed(2)}</span></div>
+      <div style="display:flex;justify-content:space-between"><span>Room:</span><span>₺${parseFloat(b.room_charge||0).toFixed(2)}</span></div>
+      <div style="display:flex;justify-content:space-between"><span>Other:</span><span>₺${parseFloat(b.other_charges||0).toFixed(2)}</span></div>
+      <hr style="border-color:var(--gray-3);margin:10px 0"/>
+      <div style="display:flex;justify-content:space-between;font-size:1rem;font-weight:700;color:var(--blue-mid)"><span>TOTAL:</span><span>₺${parseFloat(b.total_amount||0).toFixed(2)}</span></div>
+      <div style="margin-top:10px;display:flex;justify-content:space-between"><span>Status:</span>${statusBadge(b.payment_status)}</div>
+      ${b.payment_method ? `<div style="display:flex;justify-content:space-between"><span>Method:</span><span>${b.payment_method}</span></div>` : ''}
+    </div>`;
+  document.getElementById('viewModal').classList.add('open');
+}
+
+function closeCreate() { document.getElementById('createModal').classList.remove('open'); }
+function closeView()   { document.getElementById('viewModal').classList.remove('open'); }
+
+document.addEventListener('DOMContentLoaded', loadBills);
+</script>
+</body>
+</html>

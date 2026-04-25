@@ -1,0 +1,279 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/><meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+  <meta name="root" content="../../"/>
+  <title>Medical Records – Hospital Management System</title>
+  <link rel="stylesheet" href="../../css/style.css"/>
+</head>
+<body data-page="records">
+<div class="layout">
+  <div id="sidebarContainer"></div>
+  <div class="main-content">
+    <div id="navbarContainer"></div>
+    <div class="page-body">
+
+      <div class="page-header">
+        <div><h1>🩺 Medical Records</h1><p>Patient diagnoses and treatment records</p></div>
+        <button class="btn btn-primary" onclick="openCreateModal()">+ New Record</button>
+      </div>
+
+      <!-- Search -->
+      <div class="card" style="margin-bottom:20px">
+        <div class="card-body" style="padding:14px 20px">
+          <div class="search-bar">
+            <div class="search-wrap">
+              <span class="search-icon">🔍</span>
+              <input type="text" id="searchInput" placeholder="Search patient or doctor..." oninput="filterTable()"/>
+            </div>
+            <select id="patientFilter" class="form-control" style="width:200px;padding:8px 10px" onchange="loadRecords()">
+              <option value="">All Patients</option>
+            </select>
+          </div>
+        </div>
+      </div>
+
+      <!-- Table -->
+      <div class="card">
+        <div class="card-header">
+          <h2>Records List</h2>
+          <span id="tableCount" style="font-size:.8rem;color:var(--gray-5)"></span>
+        </div>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr><th>#</th><th>Patient</th><th>Doctor</th><th>Diagnosis</th><th>Treatment</th><th>Date</th><th>Actions</th></tr>
+            </thead>
+            <tbody id="recordBody">
+              <tr><td colspan="7" style="text-align:center;padding:32px;color:var(--gray-5)">Loading...</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<!-- Create Record Modal -->
+<div class="modal-overlay" id="createModal">
+  <div class="modal" style="max-width:640px">
+    <div class="modal-header">
+      <h3>🩺 New Medical Record</h3>
+      <button class="modal-close" onclick="closeCreate()">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="alert" id="createAlert"></div>
+      <form id="createForm">
+        <div class="form-grid">
+          <div class="form-group">
+            <label>Patient *</label>
+            <div class="input-wrap"><span class="input-icon">👤</span>
+              <select class="form-control" id="cr_patient" name="patient_id">
+                <option value="">Select patient...</option>
+              </select>
+            </div>
+            <span class="field-error" id="crPatError"></span>
+          </div>
+          <div class="form-group">
+            <label>Doctor *</label>
+            <div class="input-wrap"><span class="input-icon">👨‍⚕️</span>
+              <select class="form-control" id="cr_doctor" name="doctor_id">
+                <option value="">Select doctor...</option>
+              </select>
+            </div>
+            <span class="field-error" id="crDocError"></span>
+          </div>
+          <div class="form-group">
+            <label>Linked Appointment</label>
+            <div class="input-wrap"><span class="input-icon">📅</span>
+              <select class="form-control" id="cr_appt" name="appointment_id">
+                <option value="">None</option>
+              </select>
+            </div>
+          </div>
+          <div class="form-group">
+            <label>Record Date *</label>
+            <div class="input-wrap"><span class="input-icon">📅</span>
+              <input type="date" class="form-control" id="cr_date" name="record_date"/>
+            </div>
+          </div>
+          <div class="form-group full">
+            <label>Diagnosis *</label>
+            <textarea class="form-control" id="cr_diagnosis" name="diagnosis" placeholder="Enter diagnosis..." rows="3"></textarea>
+            <span class="field-error" id="crDiagError"></span>
+          </div>
+          <div class="form-group full">
+            <label>Treatment Plan</label>
+            <textarea class="form-control" name="treatment" placeholder="Describe treatment plan..." rows="2"></textarea>
+          </div>
+          <div class="form-group full">
+            <label>Notes</label>
+            <textarea class="form-control" name="notes" placeholder="Additional notes..." rows="2"></textarea>
+          </div>
+        </div>
+      </form>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeCreate()">Cancel</button>
+      <button class="btn btn-primary" id="createBtn" onclick="submitRecord()">
+        <span class="spinner" id="crSpinner"></span>
+        <span id="crBtnText">Create Record</span>
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- View Record Modal -->
+<div class="modal-overlay" id="viewModal">
+  <div class="modal" style="max-width:640px">
+    <div class="modal-header">
+      <h3>📋 Medical Record Details</h3>
+      <button class="modal-close" onclick="closeView()">✕</button>
+    </div>
+    <div class="modal-body" id="viewBody"></div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeView()">Close</button>
+      <button class="btn btn-primary" id="addPrescBtn" onclick="goToPrescription()">💊 Add Prescription</button>
+    </div>
+  </div>
+</div>
+
+<div id="toast"></div>
+<script src="../../js/validation.js"></script>
+<script src="../../js/main.js"></script>
+<script>
+const BASE = '../../../backend/';
+let allRecords = [];
+let currentRecordId = null;
+
+async function loadRecords() {
+  const pid  = document.getElementById('patientFilter').value;
+  let url = BASE + 'medical_records/read.php';
+  if (pid) url += `?patient_id=${pid}`;
+  const data = await apiGet(url);
+  if (!data.success) return;
+  allRecords = data.data || [];
+  document.getElementById('tableCount').textContent = `${allRecords.length} record(s)`;
+  renderTable(allRecords);
+}
+
+function renderTable(rows) {
+  const tbody = document.getElementById('recordBody');
+  if (!rows.length) {
+    tbody.innerHTML='<tr><td colspan="7"><div class="empty-state"><div class="empty-icon">🩺</div><p>No records found.</p></div></td></tr>';
+    return;
+  }
+  tbody.innerHTML = rows.map(r => `
+    <tr>
+      <td style="color:var(--gray-5)">#${r.record_id}</td>
+      <td style="font-weight:500">${r.patient_name}</td>
+      <td>Dr. ${r.doctor_name}<div style="font-size:.75rem;color:var(--gray-5)">${r.specialization}</div></td>
+      <td style="max-width:180px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${r.diagnosis}</td>
+      <td style="max-width:160px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:var(--gray-5)">${r.treatment||'—'}</td>
+      <td>${fmtDate(r.record_date)}</td>
+      <td>
+        <div style="display:flex;gap:6px">
+          <button class="btn btn-outline btn-sm" onclick='viewRecord(${JSON.stringify(r).replace(/"/g,"&quot;")})'>👁️ View</button>
+        </div>
+      </td>
+    </tr>`).join('');
+}
+
+function filterTable() {
+  const q = document.getElementById('searchInput').value.toLowerCase();
+  renderTable(allRecords.filter(r =>
+    r.patient_name?.toLowerCase().includes(q) || r.doctor_name?.toLowerCase().includes(q)
+  ));
+}
+
+async function openCreateModal() {
+  // Load dropdowns
+  const [patients, doctors] = await Promise.all([
+    apiGet(BASE+'patients/read.php'),
+    apiGet(BASE+'doctors/read.php')
+  ]);
+  const patSel = document.getElementById('cr_patient');
+  patSel.innerHTML = '<option value="">Select patient...</option>';
+  patients.data?.forEach(p => patSel.innerHTML += `<option value="${p.patient_id}">${p.first_name} ${p.last_name}</option>`);
+
+  const docSel = document.getElementById('cr_doctor');
+  docSel.innerHTML = '<option value="">Select doctor...</option>';
+  doctors.data?.forEach(d => docSel.innerHTML += `<option value="${d.doctor_id}">Dr. ${d.first_name} ${d.last_name}</option>`);
+
+  document.getElementById('cr_date').value = new Date().toISOString().split('T')[0];
+
+  // Load scheduled appointments
+  const appts = await apiGet(BASE+'appointments/read.php?status=Scheduled');
+  const apptSel = document.getElementById('cr_appt');
+  apptSel.innerHTML = '<option value="">None</option>';
+  appts.data?.forEach(a => apptSel.innerHTML += `<option value="${a.appointment_id}">${a.patient_name} – ${fmtDate(a.appt_date)} ${a.appt_time?.slice(0,5)}</option>`);
+
+  document.getElementById('createModal').classList.add('open');
+}
+function closeCreate() { document.getElementById('createModal').classList.remove('open'); }
+
+async function submitRecord() {
+  const alert = document.getElementById('createAlert');
+  const patOk  = validateSelect(document.getElementById('cr_patient'), 'crPatError', 'patient');
+  const docOk  = validateSelect(document.getElementById('cr_doctor'),  'crDocError', 'doctor');
+  const diagOk = document.getElementById('cr_diagnosis').value.trim()
+    ? (setValid(document.getElementById('cr_diagnosis'),'crDiagError'),true)
+    : (setError(document.getElementById('cr_diagnosis'),'crDiagError','Diagnosis is required.'),false);
+  if (!patOk||!docOk||!diagOk) return;
+
+  document.getElementById('createBtn').disabled = true;
+  document.getElementById('crSpinner').style.display = 'block';
+  document.getElementById('crBtnText').textContent = 'Creating...';
+
+  try {
+    const data = await apiPost(BASE+'medical_records/create.php', new FormData(document.getElementById('createForm')));
+    if (data.success) {
+      showToast(data.message,'success');
+      closeCreate();
+      document.getElementById('createForm').reset();
+      loadRecords();
+    } else {
+      alert.textContent='⚠️ '+data.message; alert.className='alert error visible';
+    }
+  } catch { alert.textContent='⚠️ Network error.'; alert.className='alert error visible'; }
+  document.getElementById('createBtn').disabled = false;
+  document.getElementById('crSpinner').style.display = 'none';
+  document.getElementById('crBtnText').textContent = 'Create Record';
+}
+
+function viewRecord(r) {
+  currentRecordId = r.record_id;
+  document.getElementById('viewBody').innerHTML = `
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;font-size:.875rem">
+      <div><label style="color:var(--gray-5);font-size:.75rem;text-transform:uppercase">Patient</label><div style="font-weight:600;margin-top:4px">${r.patient_name}</div></div>
+      <div><label style="color:var(--gray-5);font-size:.75rem;text-transform:uppercase">Doctor</label><div style="font-weight:600;margin-top:4px">Dr. ${r.doctor_name}</div></div>
+      <div><label style="color:var(--gray-5);font-size:.75rem;text-transform:uppercase">Specialization</label><div style="margin-top:4px">${r.specialization}</div></div>
+      <div><label style="color:var(--gray-5);font-size:.75rem;text-transform:uppercase">Record Date</label><div style="margin-top:4px">${fmtDate(r.record_date)}</div></div>
+      <div style="grid-column:1/-1">
+        <label style="color:var(--gray-5);font-size:.75rem;text-transform:uppercase">Diagnosis</label>
+        <div style="margin-top:6px;padding:12px;background:var(--red-light);border-radius:8px;color:var(--red);font-weight:500">${r.diagnosis}</div>
+      </div>
+      <div style="grid-column:1/-1">
+        <label style="color:var(--gray-5);font-size:.75rem;text-transform:uppercase">Treatment Plan</label>
+        <div style="margin-top:6px;padding:12px;background:var(--green-light);border-radius:8px">${r.treatment||'No treatment plan specified.'}</div>
+      </div>
+      ${r.notes ? `<div style="grid-column:1/-1"><label style="color:var(--gray-5);font-size:.75rem;text-transform:uppercase">Notes</label><div style="margin-top:6px;padding:12px;background:var(--gray-1);border-radius:8px">${r.notes}</div></div>` : ''}
+    </div>`;
+  document.getElementById('viewModal').classList.add('open');
+}
+function closeView() { document.getElementById('viewModal').classList.remove('open'); }
+function goToPrescription() {
+  window.location.href = `../medical/prescription.html?record_id=${currentRecordId}`;
+}
+
+async function loadPatientFilter() {
+  const data = await apiGet(BASE+'patients/read.php');
+  const sel  = document.getElementById('patientFilter');
+  data.data?.forEach(p => sel.innerHTML += `<option value="${p.patient_id}">${p.first_name} ${p.last_name}</option>`);
+}
+
+document.addEventListener('DOMContentLoaded', () => { loadPatientFilter(); loadRecords(); });
+</script>
+</body>
+</html>
