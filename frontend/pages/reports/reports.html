@@ -1,0 +1,311 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/><meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+  <meta name="root" content="../../"/>
+  <title>Reports – Hospital Management System</title>
+  <link rel="stylesheet" href="../../css/style.css"/>
+  <style>
+    .report-tabs { display:flex; gap:8px; flex-wrap:wrap; margin-bottom:20px; }
+    .tab-btn {
+      padding:8px 18px; border-radius:8px; border:1.5px solid var(--gray-3);
+      background:var(--white); cursor:pointer; font-size:.875rem; font-weight:500;
+      font-family:inherit; transition:all .2s; color:var(--gray-7);
+    }
+    .tab-btn:hover { border-color:var(--blue-mid); color:var(--blue-mid); }
+    .tab-btn.active { background:var(--blue-mid); color:var(--white); border-color:var(--blue-mid); }
+
+    .report-section { display:none; }
+    .report-section.active { display:block; }
+
+    .kpi-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(180px,1fr)); gap:14px; margin-bottom:20px; }
+    .kpi-card {
+      background:var(--white); border:1px solid var(--gray-3); border-radius:10px;
+      padding:18px 16px; text-align:center;
+    }
+    .kpi-val  { font-size:1.6rem; font-weight:700; color:var(--blue-mid); }
+    .kpi-lbl  { font-size:.78rem; color:var(--gray-5); margin-top:4px; }
+
+    .dept-bar { display:flex; align-items:center; gap:10px; margin-bottom:8px; }
+    .dept-bar-fill { height:10px; border-radius:5px; background:var(--blue-mid); transition:width .5s; }
+    .dept-name { font-size:.82rem; width:110px; flex-shrink:0; color:var(--gray-7); }
+    .dept-count { font-size:.82rem; color:var(--gray-5); margin-left:auto; }
+
+    .date-range { display:flex; gap:10px; align-items:center; flex-wrap:wrap; margin-bottom:20px; }
+    .date-range label { font-size:.85rem; font-weight:500; color:var(--gray-7); }
+    .date-range input { padding:7px 10px; border:1.5px solid var(--gray-3); border-radius:8px; font-family:inherit; font-size:.875rem; outline:none; }
+    .date-range input:focus { border-color:var(--blue-mid); }
+  </style>
+</head>
+<body data-page="reports">
+<div class="layout">
+  <div id="sidebarContainer"></div>
+  <div class="main-content">
+    <div id="navbarContainer"></div>
+    <div class="page-body">
+
+      <div class="page-header">
+        <div><h1>📊 Reports</h1><p>Analytics and statistics overview</p></div>
+        <button class="btn btn-outline" onclick="window.print()">🖨️ Print Report</button>
+      </div>
+
+      <!-- Report tabs -->
+      <div class="report-tabs">
+        <button class="tab-btn active" onclick="switchTab('summary',this)">📈 Summary</button>
+        <button class="tab-btn" onclick="switchTab('appointments',this)">📅 Appointments</button>
+        <button class="tab-btn" onclick="switchTab('billing',this)">💳 Billing</button>
+        <button class="tab-btn" onclick="switchTab('patients',this)">👥 Patients</button>
+        <button class="tab-btn" onclick="switchTab('doctors',this)">👨‍⚕️ Doctors</button>
+      </div>
+
+      <!-- ══ SUMMARY ════════════════════════════════════════ -->
+      <div class="report-section active" id="sec-summary">
+        <div class="kpi-grid" id="kpiGrid">
+          <div style="grid-column:1/-1;text-align:center;padding:30px;color:var(--gray-5)">Loading summary...</div>
+        </div>
+
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px">
+          <div class="card">
+            <div class="card-header"><h2>🏥 Appointments by Department</h2></div>
+            <div class="card-body" id="deptChart">Loading...</div>
+          </div>
+          <div class="card">
+            <div class="card-header"><h2>💰 Revenue Breakdown</h2></div>
+            <div class="card-body" id="revChart">Loading...</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ══ APPOINTMENTS ═══════════════════════════════════ -->
+      <div class="report-section" id="sec-appointments">
+        <div class="date-range">
+          <label>From:</label>
+          <input type="date" id="appt_from" onchange="loadReport('appointments')"/>
+          <label>To:</label>
+          <input type="date" id="appt_to" onchange="loadReport('appointments')"/>
+        </div>
+        <div class="kpi-grid" id="apptKpi"></div>
+        <div class="card">
+          <div class="card-header"><h2>Appointment List</h2><span id="apptCount" style="font-size:.8rem;color:var(--gray-5)"></span></div>
+          <div class="table-wrap">
+            <table><thead>
+              <tr><th>ID</th><th>Patient</th><th>Doctor</th><th>Department</th><th>Date</th><th>Time</th><th>Status</th></tr>
+            </thead><tbody id="apptBody"></tbody></table>
+          </div>
+        </div>
+      </div>
+
+      <!-- ══ BILLING ════════════════════════════════════════ -->
+      <div class="report-section" id="sec-billing">
+        <div class="date-range">
+          <label>From:</label>
+          <input type="date" id="bill_from" onchange="loadReport('billing')"/>
+          <label>To:</label>
+          <input type="date" id="bill_to" onchange="loadReport('billing')"/>
+        </div>
+        <div class="kpi-grid" id="billKpi"></div>
+        <div class="card">
+          <div class="card-header"><h2>Billing Records</h2><span id="billCount" style="font-size:.8rem;color:var(--gray-5)"></span></div>
+          <div class="table-wrap">
+            <table><thead>
+              <tr><th>ID</th><th>Patient</th><th>Date</th><th>Consult</th><th>Medicine</th><th>Room</th><th>Total</th><th>Status</th></tr>
+            </thead><tbody id="billBody"></tbody></table>
+          </div>
+        </div>
+      </div>
+
+      <!-- ══ PATIENTS ═══════════════════════════════════════ -->
+      <div class="report-section" id="sec-patients">
+        <div class="kpi-grid" id="patKpi"></div>
+        <div class="card">
+          <div class="card-header"><h2>Patient Statistics</h2><span id="patCount" style="font-size:.8rem;color:var(--gray-5)"></span></div>
+          <div class="table-wrap">
+            <table><thead>
+              <tr><th>ID</th><th>Name</th><th>Gender</th><th>Age</th><th>Blood Type</th><th>Appointments</th><th>Records</th><th>Registered</th></tr>
+            </thead><tbody id="patBody"></tbody></table>
+          </div>
+        </div>
+      </div>
+
+      <!-- ══ DOCTORS ════════════════════════════════════════ -->
+      <div class="report-section" id="sec-doctors">
+        <div class="card">
+          <div class="card-header"><h2>Doctor Performance</h2><span id="docCount" style="font-size:.8rem;color:var(--gray-5)"></span></div>
+          <div class="table-wrap">
+            <table><thead>
+              <tr><th>Doctor</th><th>Specialization</th><th>Department</th><th>Total Appts</th><th>Completed</th><th>Cancelled</th><th>Records</th></tr>
+            </thead><tbody id="docBody"></tbody></table>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+<div id="toast"></div>
+<script src="../../js/main.js"></script>
+<script>
+const BASE = '../../../backend/';
+
+// Set default date range (first of month → today)
+const today    = new Date().toISOString().split('T')[0];
+const firstDay = today.slice(0,8) + '01';
+['appt_from','bill_from'].forEach(id => { const el=document.getElementById(id); if(el) el.value=firstDay; });
+['appt_to','bill_to'].forEach(id => { const el=document.getElementById(id); if(el) el.value=today; });
+
+let currentTab = 'summary';
+
+function switchTab(tab, btn) {
+  currentTab = tab;
+  document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+  document.querySelectorAll('.report-section').forEach(s=>s.classList.remove('active'));
+  document.getElementById('sec-'+tab).classList.add('active');
+  loadReport(tab);
+}
+
+async function loadReport(type) {
+  const fromId = type==='billing' ? 'bill_from' : 'appt_from';
+  const toId   = type==='billing' ? 'bill_to'   : 'appt_to';
+  const from   = document.getElementById(fromId)?.value || firstDay;
+  const to     = document.getElementById(toId)?.value   || today;
+
+  const data = await apiGet(`${BASE}reports/generate.php?type=${type}&date_from=${from}&date_to=${to}`);
+  if (!data.success) { showToast('Failed to load report','error'); return; }
+
+  if (type === 'summary')      renderSummary(data.data);
+  if (type === 'appointments') renderAppointments(data);
+  if (type === 'billing')      renderBilling(data);
+  if (type === 'patients')     renderPatients(data);
+  if (type === 'doctors')      renderDoctors(data);
+}
+
+function kpiCard(val, label, color='var(--blue-mid)') {
+  return `<div class="kpi-card"><div class="kpi-val" style="color:${color}">${val}</div><div class="kpi-lbl">${label}</div></div>`;
+}
+
+function renderSummary(d) {
+  document.getElementById('kpiGrid').innerHTML = [
+    kpiCard(d.total_patients,        'Total Patients',       'var(--blue-mid)'),
+    kpiCard(d.total_doctors,         'Total Doctors',        '#7c3aed'),
+    kpiCard(d.total_appointments,    'Total Appointments',   'var(--orange)'),
+    kpiCard(d.scheduled_appointments,'Scheduled',            'var(--blue-mid)'),
+    kpiCard(d.completed_appointments,'Completed',            'var(--green)'),
+    kpiCard(d.total_records,         'Medical Records',      '#0891b2'),
+    kpiCard('₺'+parseFloat(d.total_revenue).toFixed(0),    'Total Revenue',   'var(--green)'),
+    kpiCard('₺'+parseFloat(d.outstanding_revenue).toFixed(0),'Outstanding',  'var(--red)'),
+    kpiCard(d.available_rooms,       'Available Rooms',      'var(--green)'),
+    kpiCard(d.occupied_rooms,        'Occupied Rooms',       'var(--red)'),
+  ].join('');
+
+  // Department bar chart
+  const max = Math.max(...(d.by_department||[]).map(x=>x.total),1);
+  document.getElementById('deptChart').innerHTML = (d.by_department||[]).map(dep=>
+    `<div class="dept-bar">
+      <span class="dept-name">${dep.dept_name}</span>
+      <div style="flex:1;background:var(--gray-2);border-radius:5px;height:10px">
+        <div class="dept-bar-fill" style="width:${Math.round(dep.total/max*100)}%"></div>
+      </div>
+      <span class="dept-count">${dep.total}</span>
+    </div>`
+  ).join('') || '<p style="color:var(--gray-5)">No data yet.</p>';
+
+  // Revenue donut-style text breakdown
+  const total     = parseFloat(d.total_revenue)||1;
+  const paidPct   = Math.round(parseFloat(d.collected_revenue)/total*100);
+  const unpaidPct = 100-paidPct;
+  document.getElementById('revChart').innerHTML = `
+    <div style="display:flex;flex-direction:column;gap:14px;font-size:.875rem">
+      <div style="display:flex;justify-content:space-between"><span>Total Billed</span><b>₺${parseFloat(d.total_revenue).toFixed(2)}</b></div>
+      <div style="height:8px;background:var(--gray-2);border-radius:4px">
+        <div style="height:100%;width:${paidPct}%;background:var(--green);border-radius:4px"></div>
+      </div>
+      <div style="display:flex;justify-content:space-between"><span style="color:var(--green)">✅ Collected</span><b style="color:var(--green)">₺${parseFloat(d.collected_revenue).toFixed(2)} (${paidPct}%)</b></div>
+      <div style="display:flex;justify-content:space-between"><span style="color:var(--red)">❌ Outstanding</span><b style="color:var(--red)">₺${parseFloat(d.outstanding_revenue).toFixed(2)} (${unpaidPct}%)</b></div>
+    </div>`;
+}
+
+function renderAppointments(data) {
+  const s = data.by_status || {};
+  document.getElementById('apptKpi').innerHTML = [
+    kpiCard(data.count,        'Total',     'var(--gray-8)'),
+    kpiCard(s.Scheduled||0,   'Scheduled', 'var(--blue-mid)'),
+    kpiCard(s.Completed||0,   'Completed', 'var(--green)'),
+    kpiCard(s.Cancelled||0,   'Cancelled', 'var(--red)'),
+    kpiCard(s['No-Show']||0,  'No-Show',   'var(--gray-5)'),
+  ].join('');
+  document.getElementById('apptCount').textContent = `${data.count} record(s)`;
+  document.getElementById('apptBody').innerHTML = (data.data||[]).map(a=>`
+    <tr>
+      <td>#${a.appointment_id}</td>
+      <td>${a.patient_name}</td>
+      <td>Dr. ${a.doctor_name}</td>
+      <td>${a.dept_name}</td>
+      <td>${fmtDate(a.appt_date)}</td>
+      <td>${a.appt_time?.slice(0,5)}</td>
+      <td>${statusBadge(a.status)}</td>
+    </tr>`).join('') || '<tr><td colspan="7" style="text-align:center;color:var(--gray-5)">No appointments in range.</td></tr>';
+}
+
+function renderBilling(data) {
+  const t = data.totals || {};
+  document.getElementById('billKpi').innerHTML = [
+    kpiCard(data.count,                              'Total Bills',  'var(--gray-8)'),
+    kpiCard('₺'+(t.total||0).toFixed(2),            'Total Billed', 'var(--blue-mid)'),
+    kpiCard('₺'+(t.paid||0).toFixed(2),             'Collected',    'var(--green)'),
+    kpiCard('₺'+(t.unpaid||0).toFixed(2),           'Unpaid',       'var(--red)'),
+  ].join('');
+  document.getElementById('billCount').textContent = `${data.count} bill(s)`;
+  document.getElementById('billBody').innerHTML = (data.data||[]).map(b=>`
+    <tr>
+      <td>#${b.bill_id}</td>
+      <td>${b.patient_name}</td>
+      <td>${fmtDate(b.bill_date)}</td>
+      <td>₺${parseFloat(b.consultation_fee||0).toFixed(2)}</td>
+      <td>₺${parseFloat(b.medicine_cost||0).toFixed(2)}</td>
+      <td>₺${parseFloat(b.room_charge||0).toFixed(2)}</td>
+      <td style="font-weight:700;color:var(--blue-mid)">₺${parseFloat(b.total_amount||0).toFixed(2)}</td>
+      <td>${statusBadge(b.payment_status)}</td>
+    </tr>`).join('') || '<tr><td colspan="8" style="text-align:center;color:var(--gray-5)">No bills in range.</td></tr>';
+}
+
+function renderPatients(data) {
+  const g = data.by_gender || {};
+  document.getElementById('patKpi').innerHTML = [
+    kpiCard(data.count,          'Total Patients', 'var(--blue-mid)'),
+    kpiCard(g.Male||0,           'Male',           '#2563eb'),
+    kpiCard(g.Female||0,         'Female',         '#db2777'),
+    kpiCard(g.Other||0,          'Other',          'var(--gray-5)'),
+  ].join('');
+  document.getElementById('patCount').textContent = `${data.count} patient(s)`;
+  document.getElementById('patBody').innerHTML = (data.data||[]).map(p=>`
+    <tr>
+      <td>#${p.patient_id}</td>
+      <td style="font-weight:500">${p.name}</td>
+      <td>${p.gender}</td>
+      <td>${p.age} yrs</td>
+      <td><span class="badge badge-red">${p.blood_type||'—'}</span></td>
+      <td>${p.total_appointments}</td>
+      <td>${p.total_records}</td>
+      <td>${fmtDate(p.registered_at)}</td>
+    </tr>`).join('') || '<tr><td colspan="8" style="text-align:center;color:var(--gray-5)">No patients found.</td></tr>';
+}
+
+function renderDoctors(data) {
+  document.getElementById('docCount').textContent = `${data.count} doctor(s)`;
+  document.getElementById('docBody').innerHTML = (data.data||[]).map(d=>`
+    <tr>
+      <td style="font-weight:500">Dr. ${d.doctor_name}</td>
+      <td>${d.specialization}</td>
+      <td>${d.dept_name}</td>
+      <td style="font-weight:600">${d.total_appointments}</td>
+      <td style="color:var(--green)">${d.completed}</td>
+      <td style="color:var(--red)">${d.cancelled}</td>
+      <td>${d.records_created}</td>
+    </tr>`).join('') || '<tr><td colspan="7" style="text-align:center;color:var(--gray-5)">No doctors found.</td></tr>';
+}
+
+document.addEventListener('DOMContentLoaded', () => loadReport('summary'));
+</script>
+</body>
+</html>

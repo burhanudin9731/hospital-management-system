@@ -1,0 +1,35 @@
+<!-- ============================================================
+     Shared Footer Component
+     frontend/components/footer.html
+     ============================================================ -->
+<footer class="site-footer">
+  <div class="footer-inner">
+    <span>🏥 <strong>MediCare HMS</strong> &nbsp;|&nbsp; Hospital Management System</span>
+    <span class="footer-right">
+      &copy; <span id="footerYear"></span> &nbsp;·&nbsp; Built for CPE210 &amp; CPE212
+    </span>
+  </div>
+</footer>
+
+<style>
+.site-footer {
+  background: var(--white);
+  border-top: 1px solid var(--gray-3);
+  padding: 12px 24px;
+  margin-top: auto;
+  font-size: .78rem;
+  color: var(--gray-5);
+}
+.footer-inner {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+.footer-right { color: var(--gray-5); }
+</style>
+
+<script>
+  document.getElementById('footerYear').textContent = new Date().getFullYear();
+</script>

@@ -1,0 +1,265 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/><meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+  <meta name="root" content="../../"/>
+  <title>Rooms – Hospital Management System</title>
+  <link rel="stylesheet" href="../../css/style.css"/>
+</head>
+<body data-page="rooms">
+<div class="layout">
+  <div id="sidebarContainer"></div>
+  <div class="main-content">
+    <div id="navbarContainer"></div>
+    <div class="page-body">
+
+      <div class="page-header">
+        <div><h1>🛏️ Room Management</h1><p>Hospital rooms and bed availability</p></div>
+        <button class="btn btn-primary" onclick="openAddModal()">+ Add Room</button>
+      </div>
+
+      <!-- Stats -->
+      <div class="stats-grid" style="margin-bottom:20px;grid-template-columns:repeat(4,1fr)">
+        <div class="stat-card"><div class="stat-icon blue">🛏️</div><div><div class="stat-value" id="cntTotal">—</div><div class="stat-label">Total Rooms</div></div></div>
+        <div class="stat-card"><div class="stat-icon green">✅</div><div><div class="stat-value" id="cntAvailable">—</div><div class="stat-label">Available</div></div></div>
+        <div class="stat-card"><div class="stat-icon red">🔴</div><div><div class="stat-value" id="cntOccupied">—</div><div class="stat-label">Occupied</div></div></div>
+        <div class="stat-card"><div class="stat-icon orange">🔧</div><div><div class="stat-value" id="cntMaintenance">—</div><div class="stat-label">Maintenance</div></div></div>
+      </div>
+
+      <!-- Filter -->
+      <div class="card" style="margin-bottom:20px">
+        <div class="card-body" style="padding:14px 20px">
+          <div class="search-bar">
+            <div class="search-wrap">
+              <span class="search-icon">🔍</span>
+              <input type="text" id="searchInput" placeholder="Search room number..." oninput="filterRooms()"/>
+            </div>
+            <select id="statusFilter" class="form-control" style="width:160px;padding:8px 10px" onchange="loadRooms()">
+              <option value="">All Statuses</option>
+              <option value="Available">Available</option>
+              <option value="Occupied">Occupied</option>
+              <option value="Maintenance">Maintenance</option>
+            </select>
+            <select id="typeFilter" class="form-control" style="width:160px;padding:8px 10px" onchange="loadRooms()">
+              <option value="">All Types</option>
+              <option value="General">General</option>
+              <option value="Private">Private</option>
+              <option value="ICU">ICU</option>
+              <option value="Emergency">Emergency</option>
+              <option value="Operating">Operating</option>
+            </select>
+          </div>
+        </div>
+      </div>
+
+      <!-- Room grid -->
+      <div id="roomGrid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:16px">
+        <div style="grid-column:1/-1;text-align:center;padding:40px;color:var(--gray-5)">Loading rooms...</div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<!-- Add Room Modal -->
+<div class="modal-overlay" id="addModal">
+  <div class="modal">
+    <div class="modal-header">
+      <h3>🛏️ Add New Room</h3>
+      <button class="modal-close" onclick="closeAdd()">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="alert" id="addAlert"></div>
+      <form id="addForm">
+        <input type="hidden" name="action" value="create"/>
+        <div class="form-grid">
+          <div class="form-group">
+            <label>Room Number *</label>
+            <div class="input-wrap"><span class="input-icon">🔢</span>
+              <input type="text" class="form-control" name="room_number" placeholder="e.g. 101" required/>
+            </div>
+          </div>
+          <div class="form-group">
+            <label>Floor *</label>
+            <div class="input-wrap"><span class="input-icon">🏢</span>
+              <input type="number" class="form-control" name="floor_number" min="1" max="20" placeholder="1" required/>
+            </div>
+          </div>
+          <div class="form-group">
+            <label>Room Type *</label>
+            <div class="input-wrap"><span class="input-icon">🏥</span>
+              <select class="form-control" name="room_type" required>
+                <option value="">Select type...</option>
+                <option value="General">General</option>
+                <option value="Private">Private</option>
+                <option value="ICU">ICU</option>
+                <option value="Emergency">Emergency</option>
+                <option value="Operating">Operating</option>
+              </select>
+            </div>
+          </div>
+          <div class="form-group">
+            <label>Daily Rate (₺) *</label>
+            <div class="input-wrap"><span class="input-icon">💰</span>
+              <input type="number" class="form-control" name="daily_rate" min="0" step="0.01" placeholder="250.00" required/>
+            </div>
+          </div>
+          <div class="form-group full">
+            <label>Status</label>
+            <div class="input-wrap"><span class="input-icon">🔄</span>
+              <select class="form-control" name="status">
+                <option value="Available">Available</option>
+                <option value="Occupied">Occupied</option>
+                <option value="Maintenance">Maintenance</option>
+              </select>
+            </div>
+          </div>
+        </div>
+      </form>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeAdd()">Cancel</button>
+      <button class="btn btn-primary" id="addBtn" onclick="submitRoom()">
+        <span class="spinner" id="addSpinner"></span>
+        <span id="addBtnText">Add Room</span>
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- Status update modal -->
+<div class="modal-overlay" id="statusModal">
+  <div class="modal" style="max-width:380px">
+    <div class="modal-header">
+      <h3>🔄 Update Room Status</h3>
+      <button class="modal-close" onclick="closeStatus()">✕</button>
+    </div>
+    <div class="modal-body">
+      <p style="margin-bottom:14px;font-size:.9rem;color:var(--gray-5)">Room: <strong id="statusRoomNum"></strong></p>
+      <form id="statusForm">
+        <input type="hidden" name="action" value="update_status"/>
+        <input type="hidden" id="status_room_id" name="room_id"/>
+        <div class="form-group">
+          <label>New Status</label>
+          <div class="input-wrap"><span class="input-icon">🔄</span>
+            <select class="form-control" id="new_status" name="status">
+              <option value="Available">Available</option>
+              <option value="Occupied">Occupied</option>
+              <option value="Maintenance">Maintenance</option>
+            </select>
+          </div>
+        </div>
+      </form>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeStatus()">Cancel</button>
+      <button class="btn btn-primary" onclick="saveStatus()">Update Status</button>
+    </div>
+  </div>
+</div>
+
+<div id="toast"></div>
+<script src="../../js/main.js"></script>
+<script>
+const BASE = '../../../backend/';
+let allRooms = [];
+
+const TYPE_ICONS = {General:'🛏️',Private:'🛏️',ICU:'❤️‍🔥',Emergency:'🚨',Operating:'🔬'};
+const STATUS_COLOR = {Available:'green',Occupied:'red',Maintenance:'orange'};
+
+async function loadRooms() {
+  const status = document.getElementById('statusFilter').value;
+  const type   = document.getElementById('typeFilter').value;
+  let url = BASE + 'rooms/read.php?';
+  if (status) url += `status=${encodeURIComponent(status)}&`;
+  if (type)   url += `room_type=${encodeURIComponent(type)}&`;
+
+  const data = await apiGet(url);
+  if (!data.success) return;
+  allRooms = data.data || [];
+
+  const s = data.summary || {};
+  document.getElementById('cntTotal').textContent       = s.total       ?? allRooms.length;
+  document.getElementById('cntAvailable').textContent   = s.available   ?? 0;
+  document.getElementById('cntOccupied').textContent    = s.occupied    ?? 0;
+  document.getElementById('cntMaintenance').textContent = s.maintenance ?? 0;
+
+  renderGrid(allRooms);
+}
+
+function renderGrid(rooms) {
+  const grid = document.getElementById('roomGrid');
+  if (!rooms.length) {
+    grid.innerHTML='<div style="grid-column:1/-1"><div class="empty-state"><div class="empty-icon">🛏️</div><p>No rooms found.</p></div></div>';
+    return;
+  }
+  grid.innerHTML = rooms.map(r => `
+    <div class="card" style="overflow:hidden">
+      <div style="padding:16px 18px;background:${r.status==='Available'?'var(--green-light)':r.status==='Occupied'?'var(--red-light)':'#fff7ed'};border-bottom:1px solid var(--gray-3)">
+        <div style="display:flex;justify-content:space-between;align-items:center">
+          <div style="font-size:1.4rem;font-weight:700;color:var(--gray-8)">Room ${r.room_number}</div>
+          ${statusBadge(r.status)}
+        </div>
+        <div style="font-size:.8rem;color:var(--gray-5);margin-top:4px">${TYPE_ICONS[r.room_type]||'🏥'} ${r.room_type}</div>
+      </div>
+      <div style="padding:14px 18px;font-size:.82rem;line-height:2;color:var(--gray-7)">
+        <div>🏢 Floor <b>${r.floor_number}</b></div>
+        <div>💰 Daily Rate: <b>₺${parseFloat(r.daily_rate).toFixed(2)}</b></div>
+      </div>
+      <div style="padding:10px 18px;border-top:1px solid var(--gray-3)">
+        <button class="btn btn-outline btn-sm" style="width:100%" onclick="openStatus(${r.room_id},'${r.room_number}','${r.status}')">
+          🔄 Change Status
+        </button>
+      </div>
+    </div>`).join('');
+}
+
+function filterRooms() {
+  const q = document.getElementById('searchInput').value.toLowerCase();
+  renderGrid(allRooms.filter(r => r.room_number?.toLowerCase().includes(q)));
+}
+
+function openAddModal() { document.getElementById('addModal').classList.add('open'); }
+function closeAdd()     { document.getElementById('addModal').classList.remove('open'); }
+
+async function submitRoom() {
+  const alert = document.getElementById('addAlert');
+  alert.className = 'alert';
+  document.getElementById('addBtn').disabled = true;
+  document.getElementById('addSpinner').style.display='block';
+  document.getElementById('addBtnText').textContent='Adding...';
+
+  try {
+    const data = await apiPost(BASE+'rooms/create.php', new FormData(document.getElementById('addForm')));
+    if (data.success) {
+      showToast(data.message,'success');
+      closeAdd();
+      document.getElementById('addForm').reset();
+      loadRooms();
+    } else {
+      alert.textContent='⚠️ '+data.message; alert.className='alert error visible';
+    }
+  } catch { alert.textContent='⚠️ Network error.'; alert.className='alert error visible'; }
+  document.getElementById('addBtn').disabled=false;
+  document.getElementById('addSpinner').style.display='none';
+  document.getElementById('addBtnText').textContent='Add Room';
+}
+
+function openStatus(id, num, currentStatus) {
+  document.getElementById('status_room_id').value = id;
+  document.getElementById('statusRoomNum').textContent = num;
+  document.getElementById('new_status').value = currentStatus;
+  document.getElementById('statusModal').classList.add('open');
+}
+function closeStatus() { document.getElementById('statusModal').classList.remove('open'); }
+
+async function saveStatus() {
+  const data = await apiPost(BASE+'rooms/create.php', new FormData(document.getElementById('statusForm')));
+  if (data.success) { showToast(data.message,'success'); closeStatus(); loadRooms(); }
+  else showToast(data.message,'error');
+}
+
+document.addEventListener('DOMContentLoaded', loadRooms);
+</script>
+</body>
+</html>

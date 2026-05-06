@@ -1,0 +1,603 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Register – Hospital Management System</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --blue-dark : #1a3c6e;
+      --blue-mid  : #2563eb;
+      --blue-light: #eff6ff;
+      --red       : #dc2626;
+      --green     : #16a34a;
+      --gray-1    : #f9fafb;
+      --gray-2    : #f3f4f6;
+      --gray-3    : #e5e7eb;
+      --gray-5    : #6b7280;
+      --gray-8    : #1f2937;
+      --white     : #ffffff;
+    }
+
+    body {
+      min-height: 100vh;
+      font-family: 'Inter', sans-serif;
+      background: linear-gradient(135deg, #1a3c6e 0%, #2563eb 60%, #1e40af 100%);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 2rem 1rem;
+    }
+
+    /* ── Card ───────────────────────────────────────────────── */
+    .card {
+      background: var(--white);
+      border-radius: 16px;
+      box-shadow: 0 20px 60px rgba(0,0,0,.18);
+      width: 100%;
+      max-width: 680px;
+      padding: 2.5rem;
+    }
+
+    .card-header {
+      text-align: center;
+      margin-bottom: 2rem;
+    }
+    .card-header .logo { font-size: 2.8rem; }
+    .card-header h2 {
+      font-size: 1.7rem; font-weight: 700;
+      color: var(--gray-8); margin: .4rem 0 .3rem;
+    }
+    .card-header p { color: var(--gray-5); font-size: .9rem; }
+
+    /* Steps indicator */
+    .steps {
+      display: flex;
+      justify-content: center;
+      gap: 0;
+      margin-bottom: 2rem;
+    }
+    .step {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      flex: 1;
+      max-width: 120px;
+      position: relative;
+    }
+    .step:not(:last-child)::after {
+      content: '';
+      position: absolute;
+      top: 16px; left: 50%;
+      width: 100%; height: 2px;
+      background: var(--gray-3);
+      z-index: 0;
+    }
+    .step.done::after, .step.active::after { background: var(--blue-mid); }
+    .step-num {
+      width: 32px; height: 32px;
+      border-radius: 50%;
+      background: var(--gray-3);
+      color: var(--gray-5);
+      font-size: .8rem; font-weight: 600;
+      display: grid; place-items: center;
+      position: relative; z-index: 1;
+      transition: all .3s;
+    }
+    .step.active .step-num { background: var(--blue-mid); color: var(--white); }
+    .step.done   .step-num { background: var(--green);    color: var(--white); }
+    .step-label {
+      font-size: .7rem; color: var(--gray-5);
+      margin-top: .3rem; text-align: center;
+    }
+    .step.active .step-label { color: var(--blue-mid); font-weight: 600; }
+
+    /* ── Alert ──────────────────────────────────────────────── */
+    .alert {
+      display: none;
+      padding: .85rem 1rem;
+      border-radius: 8px;
+      font-size: .875rem;
+      margin-bottom: 1.25rem;
+      font-weight: 500;
+    }
+    .alert.error   { background: #fef2f2; color: var(--red);  border: 1px solid #fca5a5; display: flex; }
+    .alert.success { background: #f0fdf4; color: var(--green); border: 1px solid #86efac; display: flex; }
+
+    /* ── Grid ───────────────────────────────────────────────── */
+    .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+    .form-grid .full { grid-column: 1 / -1; }
+
+    /* ── Form groups ────────────────────────────────────────── */
+    .form-group { display: flex; flex-direction: column; }
+    label { font-size: .85rem; font-weight: 500; color: var(--gray-8); margin-bottom: .4rem; }
+
+    .input-wrap { position: relative; }
+    .input-icon {
+      position: absolute;
+      left: 12px; top: 50%; transform: translateY(-50%);
+      font-size: .95rem; color: var(--gray-5); pointer-events: none;
+    }
+
+    input, select {
+      width: 100%;
+      padding: .7rem .75rem .7rem 2.4rem;
+      border: 1.5px solid var(--gray-3);
+      border-radius: 8px;
+      font-size: .9rem; font-family: inherit;
+      color: var(--gray-8); background: var(--gray-1);
+      transition: border-color .2s, box-shadow .2s;
+      outline: none;
+      appearance: none;
+    }
+    input:focus, select:focus {
+      border-color: var(--blue-mid);
+      box-shadow: 0 0 0 3px rgba(37,99,235,.1);
+      background: var(--white);
+    }
+    input.error  { border-color: var(--red); }
+    input.valid  { border-color: var(--green); }
+    select.error { border-color: var(--red); }
+    select.valid { border-color: var(--green); }
+
+    .toggle-pw {
+      position: absolute; right: 10px; top: 50%; transform: translateY(-50%);
+      background: none; border: none; cursor: pointer;
+      font-size: .95rem; color: var(--gray-5);
+    }
+    .toggle-pw:hover { color: var(--blue-mid); }
+
+    .field-error {
+      font-size: .75rem; color: var(--red);
+      margin-top: .25rem; display: none;
+    }
+    .field-error.visible { display: block; }
+
+    /* password strength */
+    .strength-bar {
+      height: 4px; border-radius: 2px;
+      margin-top: .4rem;
+      background: var(--gray-3);
+      overflow: hidden;
+    }
+    .strength-fill {
+      height: 100%; width: 0;
+      border-radius: 2px;
+      transition: width .3s, background .3s;
+    }
+    .strength-label {
+      font-size: .72rem; margin-top: .2rem;
+      color: var(--gray-5); min-height: 1em;
+    }
+
+    /* ── Buttons ────────────────────────────────────────────── */
+    .btn-row {
+      display: flex; gap: .75rem;
+      margin-top: 1.75rem;
+    }
+    .btn {
+      flex: 1; padding: .8rem;
+      border-radius: 8px;
+      font-size: .95rem; font-weight: 600;
+      font-family: inherit; cursor: pointer;
+      border: none; transition: background .2s, transform .1s;
+      display: flex; align-items: center; justify-content: center; gap: .4rem;
+    }
+    .btn-outline {
+      background: var(--white);
+      color: var(--blue-mid);
+      border: 1.5px solid var(--blue-mid);
+    }
+    .btn-outline:hover { background: var(--blue-light); }
+    .btn-primary { background: var(--blue-mid); color: var(--white); }
+    .btn-primary:hover  { background: var(--blue-dark); }
+    .btn-primary:active { transform: scale(.98); }
+    .btn-primary:disabled { opacity: .6; cursor: not-allowed; }
+
+    .spinner {
+      display: none;
+      width: 16px; height: 16px;
+      border: 2px solid rgba(255,255,255,.4);
+      border-top-color: #fff;
+      border-radius: 50%;
+      animation: spin .7s linear infinite;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* ── Footer ─────────────────────────────────────────────── */
+    .card-footer {
+      text-align: center;
+      margin-top: 1.5rem;
+      font-size: .875rem;
+      color: var(--gray-5);
+    }
+    .card-footer a { color: var(--blue-mid); font-weight: 600; text-decoration: none; }
+    .card-footer a:hover { text-decoration: underline; }
+
+    /* ── Step sections ──────────────────────────────────────── */
+    .step-section { display: none; }
+    .step-section.active { display: block; }
+    .section-title {
+      font-size: 1rem; font-weight: 600;
+      color: var(--blue-dark);
+      margin-bottom: 1.25rem;
+      padding-bottom: .5rem;
+      border-bottom: 2px solid var(--blue-light);
+    }
+
+    @media (max-width: 600px) {
+      .form-grid { grid-template-columns: 1fr; }
+      .card { padding: 1.75rem 1.25rem; }
+    }
+  </style>
+</head>
+<body>
+
+<div class="card">
+
+  <!-- Header -->
+  <div class="card-header">
+    <div class="logo">🏥</div>
+    <h2>Create Account</h2>
+    <p>Join MediCare Hospital Management System</p>
+  </div>
+
+  <!-- Step indicators -->
+  <div class="steps">
+    <div class="step active" id="stepInd1">
+      <div class="step-num">1</div>
+      <span class="step-label">Account</span>
+    </div>
+    <div class="step" id="stepInd2">
+      <div class="step-num">2</div>
+      <span class="step-label">Personal</span>
+    </div>
+    <div class="step" id="stepInd3">
+      <div class="step-num">3</div>
+      <span class="step-label">Confirm</span>
+    </div>
+  </div>
+
+  <!-- Alert -->
+  <div class="alert" id="alertBox"></div>
+
+  <form id="registerForm" novalidate>
+
+    <!-- ══ STEP 1: Account info ══════════════════════════════ -->
+    <div class="step-section active" id="section1">
+      <div class="section-title">👤 Account Information</div>
+
+      <div class="form-grid">
+        <div class="form-group full">
+          <label for="username">Username</label>
+          <div class="input-wrap">
+            <span class="input-icon">🆔</span>
+            <input type="text" id="username" name="username"
+                   placeholder="e.g. dr_wilson" autocomplete="username" />
+          </div>
+          <span class="field-error" id="usernameError"></span>
+        </div>
+
+        <div class="form-group full">
+          <label for="email">Email Address</label>
+          <div class="input-wrap">
+            <span class="input-icon">📧</span>
+            <input type="email" id="email" name="email"
+                   placeholder="doctor@hospital.com" autocomplete="email" />
+          </div>
+          <span class="field-error" id="emailError"></span>
+        </div>
+
+        <div class="form-group full">
+          <label for="password">Password</label>
+          <div class="input-wrap">
+            <span class="input-icon">🔒</span>
+            <input type="password" id="password" name="password"
+                   placeholder="Minimum 8 characters" autocomplete="new-password" />
+            <button type="button" class="toggle-pw" id="togglePw1">👁️</button>
+          </div>
+          <div class="strength-bar"><div class="strength-fill" id="strengthFill"></div></div>
+          <div class="strength-label" id="strengthLabel"></div>
+          <span class="field-error" id="passwordError"></span>
+        </div>
+
+        <div class="form-group full">
+          <label for="confirm_password">Confirm Password</label>
+          <div class="input-wrap">
+            <span class="input-icon">🔒</span>
+            <input type="password" id="confirm_password" name="confirm_password"
+                   placeholder="Re-enter your password" autocomplete="new-password" />
+            <button type="button" class="toggle-pw" id="togglePw2">👁️</button>
+          </div>
+          <span class="field-error" id="confirmError"></span>
+        </div>
+      </div>
+    </div>
+
+    <!-- ══ STEP 2: Personal info ═════════════════════════════ -->
+    <div class="step-section" id="section2">
+      <div class="section-title">🏥 Personal Details</div>
+
+      <div class="form-grid">
+        <div class="form-group">
+          <label for="first_name">First Name</label>
+          <div class="input-wrap">
+            <span class="input-icon">👤</span>
+            <input type="text" id="first_name" name="first_name" placeholder="First name" />
+          </div>
+          <span class="field-error" id="firstNameError"></span>
+        </div>
+
+        <div class="form-group">
+          <label for="last_name">Last Name</label>
+          <div class="input-wrap">
+            <span class="input-icon">👤</span>
+            <input type="text" id="last_name" name="last_name" placeholder="Last name" />
+          </div>
+          <span class="field-error" id="lastNameError"></span>
+        </div>
+
+        <div class="form-group">
+          <label for="phone">Phone Number</label>
+          <div class="input-wrap">
+            <span class="input-icon">📱</span>
+            <input type="text" id="phone" name="phone" placeholder="05XXXXXXXXX" />
+          </div>
+          <span class="field-error" id="phoneError"></span>
+        </div>
+
+        <div class="form-group">
+          <label for="dob">Date of Birth</label>
+          <div class="input-wrap">
+            <span class="input-icon">📅</span>
+            <input type="date" id="dob" name="dob" style="padding-left:2.4rem" />
+          </div>
+          <span class="field-error" id="dobError"></span>
+        </div>
+
+        <div class="form-group">
+          <label for="gender">Gender</label>
+          <div class="input-wrap">
+            <span class="input-icon">⚥</span>
+            <select id="gender" name="gender">
+              <option value="">Select gender</option>
+              <option value="Male">Male</option>
+              <option value="Female">Female</option>
+              <option value="Other">Other</option>
+            </select>
+          </div>
+          <span class="field-error" id="genderError"></span>
+        </div>
+
+        <div class="form-group">
+          <label for="blood_type">Blood Type</label>
+          <div class="input-wrap">
+            <span class="input-icon">🩸</span>
+            <select id="blood_type" name="blood_type">
+              <option value="">Select blood type</option>
+              <option>A+</option><option>A-</option>
+              <option>B+</option><option>B-</option>
+              <option>AB+</option><option>AB-</option>
+              <option>O+</option><option>O-</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="form-group full">
+          <label for="address">Address</label>
+          <div class="input-wrap">
+            <span class="input-icon">🏠</span>
+            <input type="text" id="address" name="address" placeholder="Street, City" />
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ══ STEP 3: Review ════════════════════════════════════ -->
+    <div class="step-section" id="section3">
+      <div class="section-title">✅ Review &amp; Confirm</div>
+      <div id="reviewBox" style="
+        background:var(--gray-1); border:1.5px solid var(--gray-3);
+        border-radius:10px; padding:1.25rem;
+        font-size:.875rem; line-height:2;
+        color:var(--gray-8);
+      "></div>
+      <p style="margin-top:1rem;font-size:.8rem;color:var(--gray-5);">
+        By registering you agree to the hospital's terms and privacy policy.
+      </p>
+    </div>
+
+    <!-- Navigation buttons -->
+    <div class="btn-row">
+      <button type="button" class="btn btn-outline" id="btnBack" style="display:none">
+        ← Back
+      </button>
+      <button type="button" class="btn btn-primary" id="btnNext">
+        Next →
+      </button>
+      <button type="submit" class="btn btn-primary" id="btnSubmit" style="display:none">
+        <span class="spinner" id="spinner"></span>
+        <span id="btnSubmitText">Create Account</span>
+      </button>
+    </div>
+
+  </form>
+
+  <p class="card-footer">
+    Already have an account? <a href="login.html">Sign in</a>
+  </p>
+</div>
+
+<script src="../../js/validation.js"></script>
+<script>
+  let currentStep = 1;
+  const totalSteps = 3;
+
+  const btnNext   = document.getElementById('btnNext');
+  const btnBack   = document.getElementById('btnBack');
+  const btnSubmit = document.getElementById('btnSubmit');
+  const alertBox  = document.getElementById('alertBox');
+  const spinner   = document.getElementById('spinner');
+  const btnSubmitText = document.getElementById('btnSubmitText');
+
+  // ── Password toggle ──────────────────────────────────────
+  document.getElementById('togglePw1').addEventListener('click', () => {
+    const el = document.getElementById('password');
+    const btn = document.getElementById('togglePw1');
+    el.type = el.type === 'password' ? 'text' : 'password';
+    btn.textContent = el.type === 'password' ? '👁️' : '🙈';
+  });
+  document.getElementById('togglePw2').addEventListener('click', () => {
+    const el = document.getElementById('confirm_password');
+    const btn = document.getElementById('togglePw2');
+    el.type = el.type === 'password' ? 'text' : 'password';
+    btn.textContent = el.type === 'password' ? '👁️' : '🙈';
+  });
+
+  // ── Password strength ─────────────────────────────────────
+  document.getElementById('password').addEventListener('input', function() {
+    const val = this.value;
+    const fill  = document.getElementById('strengthFill');
+    const label = document.getElementById('strengthLabel');
+    let score = 0;
+    if (val.length >= 8)               score++;
+    if (/[A-Z]/.test(val))             score++;
+    if (/[0-9]/.test(val))             score++;
+    if (/[^A-Za-z0-9]/.test(val))      score++;
+
+    const map = [
+      { w: '0%',   bg: 'transparent',    txt: '' },
+      { w: '25%',  bg: '#ef4444',        txt: '🔴 Weak' },
+      { w: '50%',  bg: '#f97316',        txt: '🟠 Fair' },
+      { w: '75%',  bg: '#eab308',        txt: '🟡 Good' },
+      { w: '100%', bg: '#16a34a',        txt: '🟢 Strong' },
+    ];
+    fill.style.width      = map[score].w;
+    fill.style.background = map[score].bg;
+    label.textContent     = map[score].txt;
+  });
+
+  // ── Real-time blur validation ─────────────────────────────
+  document.getElementById('username').addEventListener('blur', () =>
+    validateUsername(document.getElementById('username'), 'usernameError'));
+  document.getElementById('email').addEventListener('blur', () =>
+    validateEmail(document.getElementById('email'), 'emailError'));
+  document.getElementById('password').addEventListener('blur', () =>
+    validatePassword(document.getElementById('password'), 'passwordError'));
+  document.getElementById('confirm_password').addEventListener('blur', () =>
+    validateConfirmPassword(
+      document.getElementById('password'),
+      document.getElementById('confirm_password'),
+      'confirmError'));
+  document.getElementById('first_name').addEventListener('blur', () =>
+    validateRequired(document.getElementById('first_name'), 'firstNameError', 'First name'));
+  document.getElementById('last_name').addEventListener('blur', () =>
+    validateRequired(document.getElementById('last_name'), 'lastNameError', 'Last name'));
+  document.getElementById('phone').addEventListener('blur', () =>
+    validatePhone(document.getElementById('phone'), 'phoneError'));
+  document.getElementById('dob').addEventListener('blur', () =>
+    validateDOB(document.getElementById('dob'), 'dobError'));
+
+  // ── Step navigation ───────────────────────────────────────
+  btnNext.addEventListener('click', () => {
+    if (validateStep(currentStep)) goToStep(currentStep + 1);
+  });
+  btnBack.addEventListener('click', () => goToStep(currentStep - 1));
+
+  function validateStep(step) {
+    if (step === 1) {
+      const u = validateUsername(document.getElementById('username'), 'usernameError');
+      const e = validateEmail(document.getElementById('email'), 'emailError');
+      const p = validatePassword(document.getElementById('password'), 'passwordError');
+      const c = validateConfirmPassword(
+        document.getElementById('password'),
+        document.getElementById('confirm_password'), 'confirmError');
+      return u && e && p && c;
+    }
+    if (step === 2) {
+      const fn = validateRequired(document.getElementById('first_name'), 'firstNameError', 'First name');
+      const ln = validateRequired(document.getElementById('last_name'),  'lastNameError',  'Last name');
+      const ph = validatePhone(document.getElementById('phone'), 'phoneError');
+      const db = validateDOB(document.getElementById('dob'), 'dobError');
+      const gn = validateSelect(document.getElementById('gender'), 'genderError', 'Gender');
+      return fn && ln && ph && db && gn;
+    }
+    return true;
+  }
+
+  function goToStep(n) {
+    document.getElementById(`section${currentStep}`).classList.remove('active');
+    document.getElementById(`stepInd${currentStep}`).classList.remove('active');
+    document.getElementById(`stepInd${currentStep}`).classList.add('done');
+
+    currentStep = n;
+
+    document.getElementById(`section${currentStep}`).classList.add('active');
+    document.getElementById(`stepInd${currentStep}`).classList.add('active');
+
+    btnBack.style.display   = currentStep > 1 ? 'flex' : 'none';
+    btnNext.style.display   = currentStep < totalSteps ? 'flex' : 'none';
+    btnSubmit.style.display = currentStep === totalSteps ? 'flex' : 'none';
+
+    if (currentStep === 3) buildReview();
+  }
+
+  function buildReview() {
+    const g = id => document.getElementById(id).value;
+    document.getElementById('reviewBox').innerHTML = `
+      <b>Username:</b> ${g('username')}<br>
+      <b>Email:</b>    ${g('email')}<br>
+      <b>Full Name:</b>${g('first_name')} ${g('last_name')}<br>
+      <b>Phone:</b>    ${g('phone')}<br>
+      <b>Date of Birth:</b> ${g('dob')}<br>
+      <b>Gender:</b>   ${g('gender')}<br>
+      <b>Blood Type:</b>${g('blood_type') || 'Not specified'}<br>
+      <b>Address:</b>  ${g('address') || 'Not specified'}
+    `;
+  }
+
+  // ── Submit with AJAX ──────────────────────────────────────
+  document.getElementById('registerForm').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    hideAlert();
+    btnSubmit.disabled = true;
+    spinner.style.display = 'block';
+    btnSubmitText.textContent = 'Creating account...';
+
+    try {
+      const formData = new FormData(document.getElementById('registerForm'));
+      const res  = await fetch('../../../backend/auth/register.php', {
+        method: 'POST', body: formData
+      });
+      const data = await res.json();
+
+      if (data.success) {
+        showAlert('✅ ' + data.message, 'success');
+        setTimeout(() => window.location.href = 'login.html', 2000);
+      } else {
+        showAlert('⚠️ ' + data.message, 'error');
+        btnSubmit.disabled = false;
+        spinner.style.display = 'none';
+        btnSubmitText.textContent = 'Create Account';
+      }
+    } catch (err) {
+      showAlert('⚠️ Network error. Please try again.', 'error');
+      btnSubmit.disabled = false;
+      spinner.style.display = 'none';
+      btnSubmitText.textContent = 'Create Account';
+    }
+  });
+
+  function showAlert(msg, type) {
+    alertBox.textContent = msg;
+    alertBox.className = `alert ${type}`;
+  }
+  function hideAlert() { alertBox.className = 'alert'; }
+  function id(x) { return document.getElementById(x); }
+</script>
+</body>
+</html>

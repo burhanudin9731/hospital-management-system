@@ -1,0 +1,220 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/><meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+  <meta name="root" content="../../"/>
+  <title>Appointments – Hospital Management System</title>
+  <link rel="stylesheet" href="../../css/style.css"/>
+</head>
+<body data-page="appointments">
+<div class="layout">
+  <div id="sidebarContainer"></div>
+  <div class="main-content">
+    <div id="navbarContainer"></div>
+    <div class="page-body">
+
+      <div class="page-header">
+        <div><h1>📅 Appointments</h1><p>Manage all patient appointments</p></div>
+        <a href="book_appointment.html" class="btn btn-primary">+ Book New</a>
+      </div>
+
+      <!-- Filter bar -->
+      <div class="card" style="margin-bottom:20px">
+        <div class="card-body" style="padding:14px 20px">
+          <div class="search-bar">
+            <div class="search-wrap">
+              <span class="search-icon">🔍</span>
+              <input type="text" id="searchInput" placeholder="Search patient or doctor..." oninput="filterTable()"/>
+            </div>
+            <select id="statusFilter" class="form-control" style="width:160px;padding:8px 10px" onchange="loadAppointments()">
+              <option value="">All Statuses</option>
+              <option value="Scheduled">Scheduled</option>
+              <option value="Completed">Completed</option>
+              <option value="Cancelled">Cancelled</option>
+              <option value="No-Show">No-Show</option>
+            </select>
+            <input type="date" id="dateFilter" class="form-control" style="width:160px;padding:8px 10px" onchange="loadAppointments()"/>
+            <button class="btn btn-ghost btn-sm" onclick="clearFilters()">Clear</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Stats row -->
+      <div class="stats-grid" style="margin-bottom:20px;grid-template-columns:repeat(4,1fr)">
+        <div class="stat-card"><div class="stat-icon blue">📅</div><div><div class="stat-value" id="cntAll">0</div><div class="stat-label">Total</div></div></div>
+        <div class="stat-card"><div class="stat-icon orange">⏳</div><div><div class="stat-value" id="cntScheduled">0</div><div class="stat-label">Scheduled</div></div></div>
+        <div class="stat-card"><div class="stat-icon green">✅</div><div><div class="stat-value" id="cntCompleted">0</div><div class="stat-label">Completed</div></div></div>
+        <div class="stat-card"><div class="stat-icon red">❌</div><div><div class="stat-value" id="cntCancelled">0</div><div class="stat-label">Cancelled</div></div></div>
+      </div>
+
+      <!-- Table -->
+      <div class="card">
+        <div class="card-header">
+          <h2>Appointment List</h2>
+          <span id="tableCount" style="font-size:.8rem;color:var(--gray-5)"></span>
+        </div>
+        <div class="table-wrap">
+          <table id="apptTable">
+            <thead>
+              <tr>
+                <th>#</th><th>Patient</th><th>Doctor</th><th>Department</th>
+                <th>Date</th><th>Time</th><th>Reason</th><th>Status</th><th>Actions</th>
+              </tr>
+            </thead>
+            <tbody id="apptBody">
+              <tr><td colspan="9" style="text-align:center;padding:32px;color:var(--gray-5)">Loading...</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<!-- Edit/Status Modal -->
+<div class="modal-overlay" id="editModal">
+  <div class="modal">
+    <div class="modal-header">
+      <h3>✏️ Update Appointment</h3>
+      <button class="modal-close" onclick="closeModal()">✕</button>
+    </div>
+    <div class="modal-body">
+      <form id="editForm">
+        <input type="hidden" id="edit_id" name="appointment_id"/>
+        <div class="form-grid">
+          <div class="form-group">
+            <label>New Date</label>
+            <div class="input-wrap"><span class="input-icon">📅</span>
+              <input type="date" class="form-control" id="edit_date" name="appt_date"/>
+            </div>
+          </div>
+          <div class="form-group">
+            <label>New Time</label>
+            <div class="input-wrap"><span class="input-icon">🕐</span>
+              <input type="time" class="form-control" id="edit_time" name="appt_time"/>
+            </div>
+          </div>
+          <div class="form-group full">
+            <label>Status</label>
+            <div class="input-wrap"><span class="input-icon">🔄</span>
+              <select class="form-control" id="edit_status" name="status">
+                <option value="Scheduled">Scheduled</option>
+                <option value="Completed">Completed</option>
+                <option value="Cancelled">Cancelled</option>
+                <option value="No-Show">No-Show</option>
+              </select>
+            </div>
+          </div>
+          <div class="form-group full">
+            <label>Notes</label>
+            <textarea class="form-control" id="edit_notes" name="notes" placeholder="Add notes..."></textarea>
+          </div>
+        </div>
+      </form>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeModal()">Cancel</button>
+      <button class="btn btn-primary" onclick="saveEdit()">Save Changes</button>
+    </div>
+  </div>
+</div>
+
+<div id="toast"></div>
+<script src="../../js/main.js"></script>
+<script>
+const BASE = '../../../backend/';
+let allData = [];
+
+async function loadAppointments() {
+  const status = document.getElementById('statusFilter').value;
+  const date   = document.getElementById('dateFilter').value;
+  let url = BASE + 'appointments/read.php?';
+  if (status) url += `status=${status}&`;
+  if (date)   url += `date=${date}&`;
+
+  const data = await apiGet(url);
+  if (!data.success) return;
+  allData = data.data || [];
+  updateStats();
+  renderTable(allData);
+}
+
+function updateStats() {
+  document.getElementById('cntAll').textContent       = allData.length;
+  document.getElementById('cntScheduled').textContent = allData.filter(a=>a.status==='Scheduled').length;
+  document.getElementById('cntCompleted').textContent = allData.filter(a=>a.status==='Completed').length;
+  document.getElementById('cntCancelled').textContent = allData.filter(a=>a.status==='Cancelled').length;
+}
+
+function renderTable(rows) {
+  const tbody = document.getElementById('apptBody');
+  document.getElementById('tableCount').textContent = `${rows.length} record(s)`;
+  if (!rows.length) {
+    tbody.innerHTML = '<tr><td colspan="9"><div class="empty-state"><div class="empty-icon">📅</div><p>No appointments found.</p></div></td></tr>';
+    return;
+  }
+  tbody.innerHTML = rows.map(a => `
+    <tr>
+      <td style="color:var(--gray-5)">#${a.appointment_id}</td>
+      <td><div style="font-weight:500">${a.patient_name}</div><div style="font-size:.75rem;color:var(--gray-5)">${a.patient_phone}</div></td>
+      <td><div>Dr. ${a.doctor_name}</div><div style="font-size:.75rem;color:var(--gray-5)">${a.specialization}</div></td>
+      <td>${a.dept_name}</td>
+      <td>${fmtDate(a.appt_date)}</td>
+      <td><span style="font-weight:600;color:var(--blue-mid)">${a.appt_time?.slice(0,5)}</span></td>
+      <td style="max-width:140px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${a.reason||'—'}</td>
+      <td>${statusBadge(a.status)}</td>
+      <td>
+        <div style="display:flex;gap:6px">
+          <button class="btn btn-outline btn-sm" onclick="openEdit(${JSON.stringify(a).replace(/"/g,'&quot;')})">✏️</button>
+          <button class="btn btn-danger btn-sm" onclick="deleteAppt(${a.appointment_id})">🗑️</button>
+        </div>
+      </td>
+    </tr>`).join('');
+}
+
+function filterTable() {
+  const q = document.getElementById('searchInput').value.toLowerCase();
+  const filtered = allData.filter(a =>
+    a.patient_name?.toLowerCase().includes(q) ||
+    a.doctor_name?.toLowerCase().includes(q) ||
+    a.dept_name?.toLowerCase().includes(q)
+  );
+  renderTable(filtered);
+}
+
+function clearFilters() {
+  document.getElementById('searchInput').value  = '';
+  document.getElementById('statusFilter').value = '';
+  document.getElementById('dateFilter').value   = '';
+  loadAppointments();
+}
+
+function openEdit(a) {
+  document.getElementById('edit_id').value     = a.appointment_id;
+  document.getElementById('edit_date').value   = a.appt_date;
+  document.getElementById('edit_time').value   = a.appt_time?.slice(0,5);
+  document.getElementById('edit_status').value = a.status;
+  document.getElementById('edit_notes').value  = a.notes || '';
+  document.getElementById('editModal').classList.add('open');
+}
+function closeModal() { document.getElementById('editModal').classList.remove('open'); }
+
+async function saveEdit() {
+  const data = await apiPost(BASE+'appointments/update.php', new FormData(document.getElementById('editForm')));
+  if (data.success) { showToast(data.message,'success'); closeModal(); loadAppointments(); }
+  else showToast(data.message,'error');
+}
+
+async function deleteAppt(id) {
+  if (!confirmDialog('Delete this appointment?')) return;
+  const fd = new FormData(); fd.append('appointment_id', id);
+  const data = await apiPost(BASE+'appointments/delete.php', fd);
+  if (data.success) { showToast('Appointment deleted','success'); loadAppointments(); }
+  else showToast(data.message,'error');
+}
+
+document.addEventListener('DOMContentLoaded', loadAppointments);
+</script>
+</body>
+</html>
